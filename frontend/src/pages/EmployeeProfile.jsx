@@ -89,11 +89,11 @@ const EmployeeProfile = () => {
           last_name: user.last_name,
           email: user.email,
           department: user.department,
-          position: user.position || 'Employé',
+          position: user.position || t('employeeProfile.defaults.employee'),
           phone: user.phone,
           hire_date: user.created_at?.split('T')[0],
-          country: 'RDC',
-          contract_type: 'CDI'
+          country: t('employeeProfile.defaults.country'),
+          contract_type: t('employeeProfile.defaults.contractType')
         });
       }
 
@@ -162,10 +162,10 @@ const EmployeeProfile = () => {
       const response = await axios.post(`/api/upload/avatar/${employeeId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      toast.success('Photo de profil mise à jour');
+      toast.success(t('employeeProfile.uploadSuccess'));
       fetchEmployeeData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'upload');
+      toast.error(error.response?.data?.detail || t('employeeProfile.uploadError'));
     } finally {
       setUploading(false);
     }
@@ -194,10 +194,10 @@ const EmployeeProfile = () => {
         url: uploadResponse.data.url
       });
       
-      toast.success('Document ajouté avec succès');
+      toast.success(t('employeeProfile.documentAdded'));
       fetchEmployeeData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'upload');
+      toast.error(error.response?.data?.detail || t('employeeProfile.uploadError'));
     } finally {
       setUploading(false);
     }
@@ -206,19 +206,19 @@ const EmployeeProfile = () => {
   // Rename document
   const handleRenameDocument = async (docId) => {
     if (!newDocName.trim()) {
-      toast.error('Le nom ne peut pas être vide');
+      toast.error(t('employeeProfile.emptyName'));
       return;
     }
     
     try {
       const employeeId = id || user?.id;
       await axios.put(`/api/employees/${employeeId}/documents/${docId}?name=${encodeURIComponent(newDocName)}`);
-      toast.success('Document renommé');
+      toast.success(t('employeeProfile.documentRenamed'));
       setEditingDocName(null);
       setNewDocName('');
       fetchEmployeeData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors du renommage');
+      toast.error(error.response?.data?.detail || t('employeeProfile.renameError'));
     }
   };
 
@@ -235,10 +235,10 @@ const EmployeeProfile = () => {
     try {
       const employeeId = id || user?.id;
       await axios.delete(`/api/employees/${employeeId}/documents/${docId}`);
-      toast.success('Document supprimé');
+      toast.success(t('employeeProfile.documentDeleted'));
       fetchEmployeeData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression');
+      toast.error(error.response?.data?.detail || t('employeeProfile.deleteError'));
     }
   };
   
@@ -246,18 +246,18 @@ const EmployeeProfile = () => {
   const handleUpdateSalary = async () => {
     const { salary, currency } = salaryDialog;
     if (!salary || isNaN(parseFloat(salary))) {
-      toast.error('Veuillez entrer un montant valide');
+      toast.error(t('employeeProfile.invalidAmount'));
       return;
     }
     const validCurrency = ['USD', 'FC'].includes(currency?.toUpperCase()) ? currency.toUpperCase() : 'USD';
     
     try {
       await axios.put(`/api/employees/${employee.id}/salary?salary=${salary}&currency=${validCurrency}`);
-      toast.success('Salaire mis à jour');
+      toast.success(t('employeeProfile.salaryUpdated'));
       setSalaryDialog({ open: false, salary: '', currency: 'USD' });
       fetchEmployeeData();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erreur lors de la mise à jour');
+      toast.error(err.response?.data?.detail || t('employeeProfile.updateError'));
     }
   };
 
@@ -266,9 +266,9 @@ const EmployeeProfile = () => {
       await axios.put(`/api/employees/${employee.id}`, editData);
       setEmployee(editData);
       setIsEditing(false);
-      toast.success('Profil mis à jour');
+      toast.success(t('employeeProfile.profileUpdated'));
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(t('employeeProfile.updateError'));
     }
   };
 
@@ -287,12 +287,12 @@ const EmployeeProfile = () => {
         rating: 0,
         comments: objectiveForm.description
       });
-      toast.success('Objectif créé');
+      toast.success(t('employeeProfile.objectiveCreated'));
       setObjectiveDialog(false);
       setObjectiveForm({ title: '', description: '', target_date: '', progress: 0 });
       fetchEmployeeData();
     } catch (error) {
-      toast.error('Erreur lors de la création');
+      toast.error(t('employeeProfile.createError'));
     }
   };
 
@@ -317,10 +317,10 @@ const EmployeeProfile = () => {
     return (
       <DashboardLayout>
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Employé non trouvé</p>
+          <p className="text-muted-foreground">{t('employeeProfile.notFound')}</p>
           <Button onClick={() => navigate(-1)} className="mt-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour
+            {t('employeeProfile.back')}
           </Button>
         </div>
       </DashboardLayout>
@@ -337,7 +337,7 @@ const EmployeeProfile = () => {
           </Button>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">Dossier Employé</h1>
+              <h1 className="text-2xl font-bold">{t('employeeProfile.title')}</h1>
               {canModify && (
                 <Button 
                   variant={isEditing ? "default" : "outline"} 
@@ -345,9 +345,9 @@ const EmployeeProfile = () => {
                   data-testid="edit-profile-btn"
                 >
                   {isEditing ? (
-                    <>Enregistrer</>
+                    <>{t('employeeProfile.save')}</>
                   ) : (
-                    <><Edit className="mr-2 h-4 w-4" />Modifier</>
+                    <><Edit className="mr-2 h-4 w-4" />{t('employeeProfile.edit')}</>
                   )}
                 </Button>
               )}
@@ -419,11 +419,11 @@ const EmployeeProfile = () => {
               <div className="grid grid-cols-2 gap-4 min-w-[200px]">
                 <div className="text-center p-3 rounded-lg bg-muted">
                   <p className="text-2xl font-bold text-primary">{documents.length}</p>
-                  <p className="text-xs text-muted-foreground">Documents</p>
+                  <p className="text-xs text-muted-foreground">{t('employeeProfile.documents')}</p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-muted">
                   <p className="text-2xl font-bold text-secondary">{behaviors.length}</p>
-                  <p className="text-xs text-muted-foreground">Notes comportement</p>
+                  <p className="text-xs text-muted-foreground">{t('employeeProfile.behaviorNotes')}</p>
                 </div>
               </div>
             </div>
@@ -435,19 +435,19 @@ const EmployeeProfile = () => {
           <TabsList className="w-full justify-start bg-muted/50 p-1 h-auto flex-wrap">
             <TabsTrigger value="travail" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
-              Informations
+              {t('employeeProfile.tabs.info')}
             </TabsTrigger>
             <TabsTrigger value="documents" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Documents
+              {t('employeeProfile.tabs.documents')}
             </TabsTrigger>
             <TabsTrigger value="comportement" className="flex items-center gap-2">
               <UserCheck className="h-4 w-4" />
-              Comportement
+              {t('employeeProfile.tabs.behavior')}
             </TabsTrigger>
             <TabsTrigger value="conges" className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4" />
-              Congés
+              {t('employeeProfile.tabs.leaves')}
             </TabsTrigger>
           </TabsList>
 
@@ -457,16 +457,16 @@ const EmployeeProfile = () => {
               {/* IDENTITÉ Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">IDENTITÉ</CardTitle>
+                  <CardTitle className="text-lg">{t('employeeProfile.identity')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                      <Label className="text-muted-foreground">Nom complet</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.fullName')}</Label>
                       <p className="font-medium text-lg">{employee.first_name} {employee.last_name}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Date de naissance</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.birthDate')}</Label>
                       {isEditing && canModify ? (
                         <Input
                           type="date"
@@ -475,12 +475,12 @@ const EmployeeProfile = () => {
                         />
                       ) : (
                         <p className="font-medium">
-                          {employee.birth_date ? format(new Date(employee.birth_date), 'dd MMMM yyyy', { locale: fr }) : 'Non renseignée'}
+                          {employee.birth_date ? format(new Date(employee.birth_date), 'dd MMMM yyyy', { locale: fr }) : t('employeeProfile.notProvidedFemale')}
                         </p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Date d'embauche</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.hireDate')}</Label>
                       {isEditing && canModify ? (
                         <Input
                           type="date"
@@ -489,23 +489,23 @@ const EmployeeProfile = () => {
                         />
                       ) : (
                         <p className="font-medium">
-                          {employee.hire_date ? format(new Date(employee.hire_date), 'dd MMMM yyyy', { locale: fr }) : 'Non renseignée'}
+                          {employee.hire_date ? format(new Date(employee.hire_date), 'dd MMMM yyyy', { locale: fr }) : t('employeeProfile.notProvidedFemale')}
                         </p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Email</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.email')}</Label>
                       <p className="font-medium">{employee.email}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Téléphone</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.phone')}</Label>
                       {isEditing && canModify ? (
                         <Input
                           value={editData.phone || ''}
                           onChange={(e) => setEditData({...editData, phone: e.target.value})}
                         />
                       ) : (
-                        <p className="font-medium">{employee.phone || 'Non renseigné'}</p>
+                        <p className="font-medium">{employee.phone || t('employeeProfile.notProvided')}</p>
                       )}
                     </div>
                   </div>
@@ -515,16 +515,16 @@ const EmployeeProfile = () => {
               {/* TRAVAIL Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">TRAVAIL</CardTitle>
+                  <CardTitle className="text-lg">{t('employeeProfile.work')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-muted-foreground">Entreprise</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.company')}</Label>
                       <p className="font-medium">PREMIDIS sarl</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Département</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.department')}</Label>
                       {isEditing && canModify ? (
                         <Input
                           value={editData.department}
@@ -535,26 +535,26 @@ const EmployeeProfile = () => {
                       )}
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Poste</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.position')}</Label>
                       {isEditing && canModify ? (
                         <Input
                           value={editData.position}
                           onChange={(e) => setEditData({...editData, position: e.target.value})}
                         />
                       ) : (
-                        <p className="font-medium">{employee.position || 'Non défini'}</p>
+                        <p className="font-medium">{employee.position || t('employeeProfile.notDefined')}</p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Niveau hiérarchique</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.hierarchyLevel')}</Label>
                       {isEditing && canModify ? (
                         <Input
                           value={editData.hierarchy_level || ''}
                           onChange={(e) => setEditData({...editData, hierarchy_level: e.target.value})}
-                          placeholder="Ex: Manager, Chef d'équipe..."
+                          placeholder={t('employeeProfile.hierarchyPlaceholder')}
                         />
                       ) : (
-                        <p className="font-medium">{employee.hierarchy_level === 'chef_departement' || employee.is_manager ? 'Chef de département' : 'Employé simple'}</p>
+                        <p className="font-medium">{employee.hierarchy_level === 'chef_departement' || employee.is_manager ? t('employeeProfile.deptHead') : t('employeeProfile.simpleEmployee')}</p>
                       )}
                     </div>
                   </div>
@@ -564,11 +564,11 @@ const EmployeeProfile = () => {
                     <div className="mt-6 pt-6 border-t">
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label className="text-muted-foreground">Salaire mensuel</Label>
+                          <Label className="text-muted-foreground">{t('employeeProfile.salary')}</Label>
                           <p className="text-2xl font-bold text-primary">
                             {employee.salary 
                               ? `${employee.salary.toLocaleString()} ${employee.salary_currency || 'USD'}` 
-                              : 'Non défini'}
+                              : t('employeeProfile.notDefined')}
                           </p>
                         </div>
                         {isAdmin() && (
@@ -580,7 +580,7 @@ const EmployeeProfile = () => {
                             });
                           }}>
                             <DollarSign className="h-4 w-4 mr-1" />
-                            Modifier le salaire
+                            {t('employeeProfile.modifySalary')}
                           </Button>
                         )}
                       </div>
@@ -592,23 +592,23 @@ const EmployeeProfile = () => {
               {/* SITE DE TRAVAIL Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">SITE DE TRAVAIL</CardTitle>
+                  <CardTitle className="text-lg">{t('employeeProfile.workSite')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
-                      <Label className="text-muted-foreground">Site principal</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.mainSite')}</Label>
                       <p className="font-medium flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-primary" />
-                        {employee.site_name || 'Non assigné'}
+                        {employee.site_name || t('employeeProfile.notAssigned')}
                       </p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Groupe hiérarchique</Label>
-                      <p className="font-medium">{employee.hierarchical_group_name || 'Non assigné'}</p>
+                      <Label className="text-muted-foreground">{t('employeeProfile.hierarchicalGroup')}</Label>
+                      <p className="font-medium">{employee.hierarchical_group_name || t('employeeProfile.notAssigned')}</p>
                     </div>
                     <div>
-                      <Label className="text-muted-foreground">Pays</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.country')}</Label>
                       <p className="font-medium">{employee.country || 'RDC'}</p>
                     </div>
                   </div>
@@ -616,7 +616,7 @@ const EmployeeProfile = () => {
                   {/* Ancienneté */}
                   {employee.hire_date && (
                     <div className="mt-4 pt-4 border-t">
-                      <Label className="text-muted-foreground">Ancienneté</Label>
+                      <Label className="text-muted-foreground">{t('employeeProfile.seniority')}</Label>
                       <p className="font-medium text-lg text-primary">
                         {(() => {
                           const hireDate = new Date(employee.hire_date);
@@ -625,11 +625,11 @@ const EmployeeProfile = () => {
                           const months = now.getMonth() - hireDate.getMonth();
                           const totalMonths = years * 12 + months;
                           if (totalMonths < 12) {
-                            return `${totalMonths} mois`;
+                            return `${totalMonths} ${t('employeeProfile.months')}`;
                           } else {
                             const y = Math.floor(totalMonths / 12);
                             const m = totalMonths % 12;
-                            return `${y} an${y > 1 ? 's' : ''}${m > 0 ? ` et ${m} mois` : ''}`;
+                            return `${y} ${y > 1 ? t('employeeProfile.yearsPlural') : t('employeeProfile.years')}${m > 0 ? ` ${t('employeeProfile.and')} ${m} ${t('employeeProfile.months')}` : ''}`;
                           }
                         })()}
                       </p>
@@ -645,8 +645,8 @@ const EmployeeProfile = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">Documents</CardTitle>
-                  <CardDescription>Certificats, pièces d'identité, autres documents</CardDescription>
+                  <CardTitle className="text-lg">{t('employeeProfile.documentsTitle')}</CardTitle>
+                  <CardDescription>{t('employeeProfile.documentsDesc')}</CardDescription>
                 </div>
                 {(isOwnProfile || canModify) && (
                   <label className="cursor-pointer">
@@ -663,7 +663,7 @@ const EmployeeProfile = () => {
                         ) : (
                           <Upload className="mr-2 h-4 w-4" />
                         )}
-                        Ajouter un document
+                        {t('employeeProfile.addDocument')}
                       </span>
                     </Button>
                   </label>
@@ -673,8 +673,8 @@ const EmployeeProfile = () => {
                 {documents.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucun document</p>
-                    <p className="text-sm mt-2">Formats acceptés : PDF, JPEG, PNG</p>
+                    <p>{t('employeeProfile.noDocuments')}</p>
+                    <p className="text-sm mt-2">{t('employeeProfile.acceptedFormats')}</p>
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -748,7 +748,7 @@ const EmployeeProfile = () => {
                                 )}
                               </div>
                             )}
-                            <p className="text-xs text-muted-foreground uppercase mb-3">{doc.type || 'Fichier'}</p>
+                            <p className="text-xs text-muted-foreground uppercase mb-3">{doc.type || t('employeeProfile.file')}</p>
                             
                             {/* Action buttons */}
                             <div className="flex gap-1 flex-wrap">
@@ -761,7 +761,7 @@ const EmployeeProfile = () => {
                                   onClick={() => setViewingDoc({ ...doc, url: docUrl, isImage, isPdf })}
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
-                                  Voir
+                                  {t('employeeProfile.view')}
                                 </Button>
                               )}
                               
@@ -802,18 +802,18 @@ const EmployeeProfile = () => {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <UserCheck className="h-5 w-5" />
-                  Dossier Comportement Complet
+                  {t('employeeProfile.behaviorTitle')}
                 </CardTitle>
                 <CardDescription>
-                  Historique disciplinaire RH - Consultation complète (lecture seule)
+                  {t('employeeProfile.behaviorDesc')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {behaviors.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <UserCheck className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                    <p className="text-lg font-medium mb-2">Aucune note de comportement</p>
-                    <p className="text-sm">Le dossier comportement est vide</p>
+                    <p className="text-lg font-medium mb-2">{t('employeeProfile.noBehaviorNotes')}</p>
+                    <p className="text-sm">{t('employeeProfile.emptyBehaviorFile')}</p>
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -839,13 +839,13 @@ const EmployeeProfile = () => {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <CalendarDays className="h-5 w-5 text-primary" />
-                  Calendrier des congés
+                  {t('employeeProfile.leavesCalendar')}
                 </CardTitle>
-                <CardDescription>Congés attribués à cet employé</CardDescription>
+                <CardDescription>{t('employeeProfile.leavesCalendarDesc')}</CardDescription>
               </CardHeader>
               <CardContent>
                 {leaves.filter(l => l.status === 'approved').length === 0 ? (
-                  <p className="text-muted-foreground text-sm text-center py-4">Aucun congé approuvé</p>
+                  <p className="text-muted-foreground text-sm text-center py-4">{t('employeeProfile.noApprovedLeaves')}</p>
                 ) : (
                   <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                     {leaves
@@ -853,14 +853,14 @@ const EmployeeProfile = () => {
                       .sort((a, b) => new Date(a.start_date) - new Date(b.start_date))
                       .map((leave) => {
                         const typeLabels = {
-                          annual: 'Congé annuel',
-                          sick: 'Congé maladie',
-                          exceptional: 'Congé exceptionnel',
-                          maternity: 'Congé maternité',
-                          paternity: 'Congé paternité',
-                          public: 'Jour férié',
-                          collective: 'Congé collectif',
-                          permanent: 'Congé permanent'
+                          annual: t('employeeProfile.leaveTypes.annual'),
+                          sick: t('employeeProfile.leaveTypes.sick'),
+                          exceptional: t('employeeProfile.leaveTypes.exceptional'),
+                          maternity: t('employeeProfile.leaveTypes.maternity'),
+                          paternity: t('employeeProfile.leaveTypes.paternity'),
+                          public: t('employeeProfile.leaveTypes.public'),
+                          collective: t('employeeProfile.leaveTypes.collective'),
+                          permanent: t('employeeProfile.leaveTypes.permanent')
                         };
                         const isPast = new Date(leave.end_date) < new Date();
                         const isOngoing = new Date(leave.start_date) <= new Date() && new Date(leave.end_date) >= new Date();
@@ -886,7 +886,7 @@ const EmployeeProfile = () => {
                             </p>
                             {isOngoing && (
                               <Badge variant="outline" className="mt-2 text-xs border-green-400 text-green-600">
-                                En cours
+                                {t('employeeProfile.ongoing')}
                               </Badge>
                             )}
                           </div>
@@ -902,28 +902,33 @@ const EmployeeProfile = () => {
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <History className="h-5 w-5" />
-                  Historique des congés
+                  {t('employeeProfile.leavesHistory')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {leaves.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <CalendarDays className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                    <p>Aucune demande de congé</p>
+                    <p>{t('employeeProfile.noLeaveRequest')}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {leaves.sort((a, b) => new Date(b.start_date) - new Date(a.start_date)).map((leave) => {
                       const statusConfig = {
-                        approved: { label: 'Approuvé', color: 'text-green-600 bg-green-100 dark:bg-green-900/30' },
-                        pending: { label: 'En attente', color: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30' },
-                        rejected: { label: 'Rejeté', color: 'text-red-600 bg-red-100 dark:bg-red-900/30' }
+                        approved: { label: t('employeeProfile.leaveStatus.approved'), color: 'text-green-600 bg-green-100 dark:bg-green-900/30' },
+                        pending: { label: t('employeeProfile.leaveStatus.pending'), color: 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/30' },
+                        rejected: { label: t('employeeProfile.leaveStatus.rejected'), color: 'text-red-600 bg-red-100 dark:bg-red-900/30' }
                       };
                       const config = statusConfig[leave.status] || statusConfig.pending;
                       const typeLabels = {
-                        annual: 'Annuel', sick: 'Maladie', exceptional: 'Exceptionnel',
-                        maternity: 'Maternité', paternity: 'Paternité', public: 'Férié',
-                        collective: 'Collectif', permanent: 'Permanent'
+                        annual: t('employeeProfile.leaveTypesShort.annual'),
+                        sick: t('employeeProfile.leaveTypesShort.sick'),
+                        exceptional: t('employeeProfile.leaveTypesShort.exceptional'),
+                        maternity: t('employeeProfile.leaveTypesShort.maternity'),
+                        paternity: t('employeeProfile.leaveTypesShort.paternity'),
+                        public: t('employeeProfile.leaveTypesShort.public'),
+                        collective: t('employeeProfile.leaveTypesShort.collective'),
+                        permanent: t('employeeProfile.leaveTypesShort.permanent')
                       };
                       
                       return (
@@ -976,15 +981,15 @@ const EmployeeProfile = () => {
               <a href={viewingDoc?.url} download={viewingDoc?.name}>
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  Télécharger
+                  {t('employeeProfile.download')}
                 </Button>
               </a>
               <a href={viewingDoc?.url} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">
-                  Ouvrir dans un nouvel onglet
+                  {t('employeeProfile.openNewTab')}
                 </Button>
               </a>
-              <Button onClick={() => setViewingDoc(null)}>Fermer</Button>
+              <Button onClick={() => setViewingDoc(null)}>{t('employeeProfile.close')}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -995,21 +1000,21 @@ const EmployeeProfile = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-destructive">
                 <Trash2 className="h-5 w-5" />
-                Confirmer la suppression
+                {t('employeeProfile.deleteConfirmTitle')}
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <p className="text-muted-foreground">
-                Voulez-vous vraiment supprimer ce document ? Cette action est irréversible.
+                {t('employeeProfile.deleteConfirmMessage')}
               </p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteDocDialog({ open: false, docId: null })}>
-                Annuler
+                {t('employeeProfile.cancel')}
               </Button>
               <Button variant="destructive" onClick={confirmDeleteDocument}>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
+                {t('employeeProfile.delete')}
               </Button>
             </div>
           </DialogContent>
@@ -1021,43 +1026,43 @@ const EmployeeProfile = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-primary" />
-                Modifier le salaire
+                {t('employeeProfile.modifySalary')}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="salary">Nouveau salaire</Label>
+                <Label htmlFor="salary">{t('employeeProfile.newSalary')}</Label>
                 <Input
                   id="salary"
                   type="number"
-                  placeholder="Ex: 2500"
+                  placeholder={t('employeeProfile.salaryPlaceholder')}
                   value={salaryDialog.salary}
                   onChange={(e) => setSalaryDialog(prev => ({ ...prev, salary: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="currency">Devise</Label>
+                <Label htmlFor="currency">{t('employeeProfile.currency')}</Label>
                 <Select 
                   value={salaryDialog.currency} 
                   onValueChange={(value) => setSalaryDialog(prev => ({ ...prev, currency: value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une devise" />
+                    <SelectValue placeholder={t('employeeProfile.selectCurrency')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">USD - Dollar américain</SelectItem>
-                    <SelectItem value="FC">FC - Franc congolais</SelectItem>
+                    <SelectItem value="USD">{t('employeeProfile.usd')}</SelectItem>
+                    <SelectItem value="FC">{t('employeeProfile.fc')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setSalaryDialog({ open: false, salary: '', currency: 'USD' })}>
-                Annuler
+                {t('employeeProfile.cancel')}
               </Button>
               <Button onClick={handleUpdateSalary}>
                 <Check className="h-4 w-4 mr-2" />
-                Enregistrer
+                {t('employeeProfile.save')}
               </Button>
             </div>
           </DialogContent>
