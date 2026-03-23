@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from './ui/button';
@@ -21,6 +22,7 @@ import { fr } from 'date-fns/locale';
 const NotificationCenter = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -206,8 +208,15 @@ const NotificationCenter = () => {
         </ScrollArea>
 
         <div className="p-3 border-t">
-          <Button variant="ghost" className="w-full text-sm" onClick={() => setOpen(false)}>
-            Voir toutes les notifications
+          <Button 
+            variant="ghost" 
+            className="w-full text-sm" 
+            onClick={() => {
+              setOpen(false);
+              navigate('/notifications');
+            }}
+          >
+            {t('notif.viewAll')}
           </Button>
         </div>
       </PopoverContent>

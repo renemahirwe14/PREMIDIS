@@ -2876,17 +2876,55 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
 @notifications_router.get("")
 async def get_notifications(
     unread_only: bool = False,
+    notification_type: Optional[str] = None,
+    search: Optional[str] = None,
+    period: Optional[str] = None,  # day, week, month, year
+    skip: int = 0,
+    limit: int = 50,
     current_user: dict = Depends(get_current_user)
 ):
-    """Get notifications for current user"""
+    """Get notifications for current user with filtering"""
     query = {"user_id": current_user["id"]}
+    
     if unread_only:
         query["read"] = False
     
-    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).to_list(50)
+    if notification_type:
+        query["type"] = notification_type
+    
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"message": {"$regex": search, "$options": "i"}}
+        ]
+    
+    # Period filtering
+    if period:
+        now = datetime.now(timezone.utc)
+        if period == "day":
+            start_date = now - timedelta(days=1)
+        elif period == "week":
+            start_date = now - timedelta(weeks=1)
+        elif period == "month":
+            start_date = now - timedelta(days=30)
+        elif period == "year":
+            start_date = now - timedelta(days=365)
+        else:
+            start_date = None
+        
+        if start_date:
+            query["created_at"] = {"$gte": start_date.isoformat()}
+    
+    total = await db.notifications.count_documents(query)
+    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     unread_count = await db.notifications.count_documents({"user_id": current_user["id"], "read": False})
     
-    return {"notifications": notifications, "unread_count": unread_count}
+    return {
+        "notifications": notifications, 
+        "unread_count": unread_count,
+        "total": total,
+        "has_more": total > skip + limit
+    }
 
 @notifications_router.post("/create")
 async def create_custom_notification(
@@ -2992,6 +3030,30 @@ async def delete_notification_template(
         raise HTTPException(status_code=404, detail="Template non trouvé")
     
     return {"message": "Template supprimé"}
+
+@notifications_router.get("/{notification_id}")
+async def get_notification_detail(
+    notification_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a single notification detail"""
+    notification = await db.notifications.find_one(
+        {"id": notification_id, "user_id": current_user["id"]},
+        {"_id": 0}
+    )
+    
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification non trouvée")
+    
+    # Mark as read when viewing details
+    if not notification.get("read"):
+        await db.notifications.update_one(
+            {"id": notification_id},
+            {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        notification["read"] = True
+    
+    return notification
 
 @notifications_router.put("/{notification_id}/read")
 async def mark_notification_read(
