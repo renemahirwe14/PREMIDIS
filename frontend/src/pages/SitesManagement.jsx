@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 
 const SitesManagement = () => {
   const { isAdmin } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [sites, setSites] = useState([]);
   const [employees, setEmployees] = useState([]);

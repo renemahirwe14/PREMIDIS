@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -14,6 +15,7 @@ import { fr } from 'date-fns/locale';
 
 const LiveChat = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});

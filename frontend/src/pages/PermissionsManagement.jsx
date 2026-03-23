@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 
 const PermissionsManagement = () => {
   const { isAdmin } = useAuth();
+  const { t } = useLanguage();
   const [modules, setModules] = useState([]);
   const [roles, setRoles] = useState([]);
   const [rolePermissions, setRolePermissions] = useState({});

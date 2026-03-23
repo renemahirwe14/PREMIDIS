@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import axios from '../config/api';
 import { Button } from '../components/ui/button';
@@ -29,6 +30,7 @@ import {
 
 const DocumentsModule = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [view, setView] = useState('library'); // 'library', 'editor', 'preview'
   const [forms, setForms] = useState([]);
