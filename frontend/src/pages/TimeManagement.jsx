@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -29,7 +30,19 @@ import { toast } from 'sonner';
 const TimeManagement = () => {
   const { user, isAdmin, canEdit } = useAuth();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('calendar');
+  const [searchParams] = useSearchParams();
+  
+  // Get tab from URL params or default to 'calendar'
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'calendar');
+  
+  // Update tab when URL changes
+  useEffect(() => {
+    if (tabFromUrl && ['calendar', 'leaves', 'attendance'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+  
   const [leaves, setLeaves] = useState([]);
   const [calendarLeaves, setCalendarLeaves] = useState([]);
   const [attendance, setAttendance] = useState([]);

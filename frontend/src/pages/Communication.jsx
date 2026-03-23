@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -23,6 +24,19 @@ import LiveChat from '../components/LiveChat';
 const Communication = () => {
   const { user, isAdmin, canEdit } = useAuth();
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
+  
+  // Get tab from URL params or default to 'announcements'
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'announcements');
+  
+  // Update tab when URL changes
+  useEffect(() => {
+    if (tabFromUrl && ['announcements', 'chat'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+  
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -215,7 +229,7 @@ const Communication = () => {
         </div>
 
         {/* Tabs for Announcements and Chat */}
-        <Tabs defaultValue="announcements" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="h-4 w-4" />

@@ -157,7 +157,7 @@ const Dashboard = () => {
           <div className="grid gap-4 md:grid-cols-3">
             <Card 
               className="border-l-4 border-l-primary cursor-pointer hover:shadow-lg transition-all"
-              onClick={() => navigate('/time-management')}
+              onClick={() => navigate('/time-management?tab=leaves')}
             >
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
@@ -187,7 +187,7 @@ const Dashboard = () => {
 
             <Card 
               className="border-l-4 border-l-accent cursor-pointer hover:shadow-lg transition-all"
-              onClick={() => navigate('/communication')}
+              onClick={() => navigate('/communication?tab=chat')}
             >
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
