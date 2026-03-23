@@ -29,8 +29,7 @@ const Login = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      // Ensure we only set a string error message, never an object
-      const errorMessage = err.response?.data?.detail || err.message || 'An error occurred';
+      const errorMessage = err.response?.data?.detail || err.message || t('auth.errorOccurred');
       setError(String(errorMessage));
     } finally {
       setLoading(false);
@@ -44,12 +43,9 @@ const Login = () => {
         backgroundImage: 'url(https://images.unsplash.com/photo-1514905565314-fea02285fa69?crop=entropy&cs=srgb&fm=jpg&q=85)'
       }}
     >
-      {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-secondary/80 backdrop-blur-sm" />
       
-      {/* Content */}
       <div className="relative z-10 w-full max-w-md animate-slide-in">
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3 bg-white/10 backdrop-blur-xl rounded-2xl px-6 py-3 border border-white/20">
             <img 
@@ -63,12 +59,11 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Login Card */}
         <Card className="glass-effect border-white/20 shadow-2xl">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">{t('login')}</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth.login')}</CardTitle>
             <CardDescription>
-              Entrez vos identifiants pour accéder à votre compte
+              {t('auth.loginSubtitle')}
             </CardDescription>
           </CardHeader>
           
@@ -81,13 +76,13 @@ const Login = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">{t('email')}</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="exemple@premierdis.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
@@ -98,7 +93,7 @@ const Login = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">{t('password')}</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -122,7 +117,7 @@ const Login = () => {
 
               <div className="flex items-center justify-end">
                 <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                  {t('forgotPassword')}
+                  {t('auth.forgotPassword')}
                 </Link>
               </div>
             </CardContent>
@@ -137,17 +132,17 @@ const Login = () => {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connexion...
+                    {t('auth.loggingIn')}
                   </>
                 ) : (
-                  t('login')
+                  t('auth.login')
                 )}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                {t('noAccount')}{' '}
+                {t('auth.noAccount')}{' '}
                 <Link to="/register" className="text-primary font-medium hover:underline">
-                  {t('createAccount')}
+                  {t('auth.createAccount')}
                 </Link>
               </p>
             </CardFooter>

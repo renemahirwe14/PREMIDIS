@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
       <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-secondary animate-pulse" />
-          <p className="text-muted-foreground">Chargement...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -58,7 +58,7 @@ const PublicRoute = ({ children }) => {
       <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-secondary animate-pulse" />
-          <p className="text-muted-foreground">Chargement...</p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );

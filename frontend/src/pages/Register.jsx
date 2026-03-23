@@ -30,21 +30,21 @@ const Register = () => {
   const [error, setError] = useState('');
 
   const departments = [
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'comptabilite', label: 'Comptabilité' },
-    { value: 'administration', label: 'Administration' },
-    { value: 'ressources_humaines', label: 'Ressources Humaines' },
-    { value: 'juridique', label: 'Juridique' },
-    { value: 'nettoyage', label: 'Nettoyage' },
-    { value: 'securite', label: 'Sécurité' },
-    { value: 'chauffeur', label: 'Chauffeur' },
-    { value: 'technicien', label: 'Technicien' }
+    { value: 'marketing', labelKey: 'departments.marketing' },
+    { value: 'comptabilite', labelKey: 'departments.comptabilite' },
+    { value: 'administration', labelKey: 'departments.administration' },
+    { value: 'ressources_humaines', labelKey: 'departments.ressources_humaines' },
+    { value: 'juridique', labelKey: 'departments.juridique' },
+    { value: 'nettoyage', labelKey: 'departments.nettoyage' },
+    { value: 'securite', labelKey: 'departments.securite' },
+    { value: 'chauffeur', labelKey: 'departments.chauffeur' },
+    { value: 'technicien', labelKey: 'departments.technicien' }
   ];
 
   const roles = [
-    { value: 'employee', label: 'Employé', description: 'Accès standard à votre dossier' },
-    { value: 'secretary', label: 'Secrétaire', description: 'Gestion du personnel et des congés' },
-    { value: 'admin', label: 'Administrateur', description: 'Accès complet à toutes les fonctionnalités' }
+    { value: 'employee', labelKey: 'roles.employee', descKey: 'roles.employeeDesc' },
+    { value: 'secretary', labelKey: 'roles.secretary', descKey: 'roles.secretaryDesc' },
+    { value: 'admin', labelKey: 'roles.admin', descKey: 'roles.adminDesc' }
   ];
 
   const handleChange = (e) => {
@@ -56,19 +56,18 @@ const Register = () => {
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError(t('auth.passwordsNoMatch'));
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+      setError(t('auth.passwordMinLength'));
       return;
     }
 
     setLoading(true);
 
     try {
-      // Register and get token - ALL ROLES ACTIVATE IMMEDIATELY
       const response = await axios.post('/api/auth/register', {
         email: formData.email,
         password: formData.password,
@@ -80,15 +79,13 @@ const Register = () => {
 
       const data = response.data;
 
-      // Store token and user data
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        // Force page reload to update auth state
         window.location.href = '/dashboard';
       }
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Une erreur est survenue');
+      setError(err.response?.data?.detail || err.message || t('auth.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -106,7 +103,6 @@ const Register = () => {
       <div className="relative z-10 w-full max-w-md animate-slide-in">
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3 bg-white/10 backdrop-blur-xl rounded-2xl px-6 py-3 border border-white/20">
-            {/* PREMIDIS Logo SVG */}
             <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M25 80 C10 80 10 50 25 35 C35 25 55 25 55 45 C55 60 40 60 35 55 C30 50 35 40 45 40" stroke="#14B8A6" strokeWidth="8" strokeLinecap="round" fill="none"/>
               <path d="M30 35 L30 20" stroke="#14B8A6" strokeWidth="8" strokeLinecap="round"/>
@@ -121,9 +117,9 @@ const Register = () => {
 
         <Card className="glass-effect border-white/20 shadow-2xl">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">{t('register')}</CardTitle>
+            <CardTitle className="text-2xl font-bold">{t('auth.register')}</CardTitle>
             <CardDescription>
-              Créez votre compte pour accéder à la plateforme
+              {t('auth.registerSubtitle')}
             </CardDescription>
           </CardHeader>
           
@@ -137,7 +133,7 @@ const Register = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="first_name">{t('firstName')} *</Label>
+                  <Label htmlFor="first_name">{t('auth.firstName')} *</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -152,7 +148,7 @@ const Register = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="last_name">{t('lastName')} *</Label>
+                  <Label htmlFor="last_name">{t('auth.lastName')} *</Label>
                   <Input
                     id="last_name"
                     name="last_name"
@@ -165,7 +161,7 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">{t('email')} *</Label>
+                <Label htmlFor="email">{t('auth.email')} *</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -181,45 +177,44 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Role Selection - ALL ROLES AVAILABLE */}
               <div className="space-y-2">
-                <Label>Rôle *</Label>
+                <Label>{t('auth.role')} *</Label>
                 <Select
                   value={formData.role}
                   onValueChange={(value) => setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger data-testid="register-role">
-                    <SelectValue placeholder="Sélectionner un rôle" />
+                    <SelectValue placeholder={t('auth.selectRole')} />
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map((role) => (
                       <SelectItem key={role.value} value={role.value}>
                         <div className="flex items-center gap-2">
                           <Shield className="h-4 w-4 text-primary" />
-                          <span>{role.label}</span>
+                          <span>{t(role.labelKey)}</span>
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  {roles.find(r => r.value === formData.role)?.description}
+                  {t(roles.find(r => r.value === formData.role)?.descKey)}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="department">{t('department')} *</Label>
+                <Label htmlFor="department">{t('auth.department')} *</Label>
                 <Select
                   value={formData.department}
                   onValueChange={(value) => setFormData({ ...formData, department: value })}
                 >
                   <SelectTrigger data-testid="register-department">
-                    <SelectValue placeholder="Sélectionner un département" />
+                    <SelectValue placeholder={t('auth.selectDepartment')} />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((dept) => (
                       <SelectItem key={dept.value} value={dept.value}>
-                        {dept.label}
+                        {t(dept.labelKey)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -227,7 +222,7 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">{t('password')} *</Label>
+                <Label htmlFor="password">{t('auth.password')} *</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -251,7 +246,7 @@ const Register = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
+                <Label htmlFor="confirmPassword">{t('auth.confirmPassword')} *</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -278,17 +273,17 @@ const Register = () => {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Création...
+                    {t('auth.creating')}
                   </>
                 ) : (
-                  t('createAccount')
+                  t('auth.createAccount')
                 )}
               </Button>
 
               <p className="text-center text-sm text-muted-foreground">
-                {t('hasAccount')}{' '}
+                {t('auth.hasAccount')}{' '}
                 <Link to="/login" className="text-primary font-medium hover:underline">
-                  {t('login')}
+                  {t('auth.login')}
                 </Link>
               </p>
             </CardFooter>

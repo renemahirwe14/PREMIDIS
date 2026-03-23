@@ -63,25 +63,25 @@ const Administration = () => {
   });
 
   const departments = [
-    { value: 'marketing', label: 'Marketing' },
-    { value: 'comptabilite', label: 'Comptabilité' },
-    { value: 'administration', label: 'Administration' },
-    { value: 'ressources_humaines', label: 'Ressources Humaines' },
-    { value: 'juridique', label: 'Juridique' },
-    { value: 'nettoyage', label: 'Nettoyage' },
-    { value: 'securite', label: 'Sécurité' },
-    { value: 'chauffeur', label: 'Chauffeur' },
-    { value: 'technicien', label: 'Technicien' },
-    { value: 'direction', label: 'Direction' },
-    { value: 'logistique', label: 'Logistique' },
-    { value: 'production', label: 'Production' },
-    { value: 'commercial', label: 'Commercial' },
-    { value: 'informatique', label: 'Informatique' }
+    { value: 'marketing', label: t('departments.marketing') },
+    { value: 'comptabilite', label: t('departments.comptabilite') },
+    { value: 'administration', label: t('departments.administration') },
+    { value: 'ressources_humaines', label: t('departments.ressources_humaines') },
+    { value: 'juridique', label: t('departments.juridique') },
+    { value: 'nettoyage', label: t('departments.nettoyage') },
+    { value: 'securite', label: t('departments.securite') },
+    { value: 'chauffeur', label: t('departments.chauffeur') },
+    { value: 'technicien', label: t('departments.technicien') },
+    { value: 'direction', label: t('departments.direction') },
+    { value: 'logistique', label: t('departments.logistique') },
+    { value: 'production', label: t('departments.production') },
+    { value: 'commercial', label: t('departments.commercial') },
+    { value: 'informatique', label: t('departments.informatique') }
   ];
 
   const hierarchyLevels = [
-    { value: 'employe', label: 'Employé simple' },
-    { value: 'chef_departement', label: 'Chef de département' }
+    { value: 'employe', label: t('admin.simpleEmployee') },
+    { value: 'chef_departement', label: t('admin.deptHead') }
   ];
 
   const countries = ['RDC', 'Congo', 'Rwanda', 'Burundi', 'Uganda', 'Kenya', 'Tanzanie', 'Cameroun'];
@@ -99,7 +99,7 @@ const Administration = () => {
       setEmployees(empRes.data.employees || []);
       setSites(sitesRes.data.sites || []);
     } catch (error) {
-      toast.error('Erreur lors du chargement');
+      toast.error(t('admin.loadError'));
     } finally {
       setLoading(false);
     }
@@ -118,16 +118,16 @@ const Administration = () => {
       
       if (editEmployee) {
         await axios.put(`/api/employees/${editEmployee.id}`, payload);
-        toast.success('Employé mis à jour');
+        toast.success(t('admin.employeeUpdated'));
       } else {
         await axios.post(`/api/employees`, payload);
-        toast.success('Employé ajouté');
+        toast.success(t('admin.employeeAdded'));
       }
       setDialogOpen(false);
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur');
+      toast.error(error.response?.data?.detail || t('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -166,10 +166,10 @@ const Administration = () => {
       await axios.delete(`/api/employees/${id}`, {
         params: { permanent }
       });
-      toast.success(permanent ? 'Employé supprimé définitivement' : 'Employé désactivé');
+      toast.success(permanent ? t('admin.employeeDeleted') : t('admin.employeeDeactivated'));
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression');
+      toast.error(error.response?.data?.detail || t('common.error'));
     }
   };
 
@@ -218,7 +218,7 @@ const Administration = () => {
   // Export employees to CSV
   const handleExport = () => {
     try {
-      const headers = ['Prénom', 'Nom', 'Email', 'Téléphone', 'Département', 'Poste', 'Date embauche', 'Statut'];
+      const headers = [t('auth.firstName'), t('auth.lastName'), t('auth.email'), t('admin.phone'), t('auth.department'), t('admin.position'), t('admin.hireDate'), 'Status'];
       const csv = [
         headers.join(','),
         ...filteredEmployees.map(emp => [
@@ -229,7 +229,7 @@ const Administration = () => {
           emp.department,
           emp.position || '',
           emp.hire_date || '',
-          emp.is_active ? 'Actif' : 'Inactif'
+          emp.is_active ? t('status.active') : t('status.inactive')
         ].map(val => `"${val}"`).join(','))
       ].join('\n');
       
@@ -244,10 +244,10 @@ const Administration = () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      toast.success('Export réussi');
+      toast.success(t('admin.exportSuccess'));
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Erreur lors de l\'export');
+      toast.error(t('admin.exportError'));
     }
   };
 
@@ -287,10 +287,10 @@ const Administration = () => {
         }
       }
       
-      toast.success(`${imported} employé(s) importé(s)`);
+      toast.success(`${imported} ${t('admin.importSuccess')}`);
       fetchData();
     } catch (error) {
-      toast.error('Erreur lors de l\'import');
+      toast.error(t('admin.importError'));
     }
     
     // Reset file input
@@ -304,8 +304,8 @@ const Administration = () => {
       <div className="space-y-6" data-testid="administration-page">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('administration')}</h1>
-            <p className="text-muted-foreground">Gestion des dossiers du personnel</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t('admin.title')}</h1>
+            <p className="text-muted-foreground">{t('admin.subtitle')}</p>
           </div>
           
           {canEdit() && (
@@ -321,31 +321,31 @@ const Administration = () => {
               
               <Button variant="outline" onClick={() => fileInputRef.current?.click()} data-testid="import-btn">
                 <Upload className="mr-2 h-4 w-4" />
-                Importer
+                {t('admin.import')}
               </Button>
               
               <Button variant="outline" onClick={handleExport} data-testid="export-btn">
                 <Download className="mr-2 h-4 w-4" />
-                Exporter
+                {t('admin.export')}
               </Button>
               
               <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
                 <DialogTrigger asChild>
                   <Button data-testid="add-employee-btn">
                     <Plus className="mr-2 h-4 w-4" />
-                    Ajouter
+                    {t('admin.add')}
                   </Button>
                 </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
-                    {editEmployee ? 'Modifier l\'employé' : 'Nouvel employé'}
+                    {editEmployee ? t('admin.editEmployee') : t('admin.newEmployee')}
                   </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>{t('firstName')}</Label>
+                      <Label>{t('auth.firstName')}</Label>
                       <Input
                         value={formData.first_name}
                         onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
@@ -354,7 +354,7 @@ const Administration = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>{t('lastName')}</Label>
+                      <Label>{t('auth.lastName')}</Label>
                       <Input
                         value={formData.last_name}
                         onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
@@ -366,7 +366,7 @@ const Administration = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>{t('email')}</Label>
+                      <Label>{t('auth.email')}</Label>
                       <Input
                         type="email"
                         value={formData.email}
@@ -376,7 +376,7 @@ const Administration = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Téléphone</Label>
+                      <Label>{t('admin.phone')}</Label>
                       <Input
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -387,7 +387,7 @@ const Administration = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>{t('department')}</Label>
+                      <Label>{t('auth.department')}</Label>
                       <Select
                         value={formData.department}
                         onValueChange={(value) => setFormData({ ...formData, department: value })}
@@ -405,7 +405,7 @@ const Administration = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Poste</Label>
+                      <Label>{t('admin.position')}</Label>
                       <Input
                         value={formData.position}
                         onChange={(e) => setFormData({ ...formData, position: e.target.value })}
@@ -417,7 +417,7 @@ const Administration = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Date d'embauche</Label>
+                      <Label>{t('admin.hireDate')}</Label>
                       <Input
                         type="date"
                         value={formData.hire_date}
@@ -427,7 +427,7 @@ const Administration = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Salaire</Label>
+                      <Label>{t('admin.salary')}</Label>
                       <div className="flex gap-2">
                         <Input
                           type="number"
@@ -455,16 +455,16 @@ const Administration = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Site de travail</Label>
+                      <Label>{t('admin.workSite')}</Label>
                       <Select
                         value={formData.site_id || 'none'}
                         onValueChange={(value) => setFormData({ ...formData, site_id: value === 'none' ? '' : value })}
                       >
                         <SelectTrigger data-testid="emp-site">
-                          <SelectValue placeholder="Sélectionner un site" />
+                          <SelectValue placeholder={t('admin.selectSite')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Non assigné</SelectItem>
+                          <SelectItem value="none">{t('admin.notAssigned')}</SelectItem>
                           {sites.map((site) => (
                             <SelectItem key={site.id} value={site.id}>{site.name} - {site.city}</SelectItem>
                           ))}
@@ -472,7 +472,7 @@ const Administration = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Niveau hiérarchique</Label>
+                      <Label>{t('admin.hierarchyLevel')}</Label>
                       <Select
                         value={formData.hierarchy_level}
                         onValueChange={(value) => setFormData({ ...formData, hierarchy_level: value })}
@@ -491,7 +491,7 @@ const Administration = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Pays</Label>
+                      <Label>{t('admin.country')}</Label>
                       <Select
                         value={formData.country}
                         onValueChange={(value) => setFormData({ ...formData, country: value })}
@@ -510,7 +510,7 @@ const Administration = () => {
 
                   <Button type="submit" className="w-full" disabled={submitting} data-testid="save-employee-btn">
                     {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {editEmployee ? 'Mettre à jour' : 'Ajouter'}
+                    {editEmployee ? t('admin.update') : t('admin.add')}
                   </Button>
                 </form>
               </DialogContent>
@@ -524,7 +524,7 @@ const Administration = () => {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher un employé..."
+              placeholder={t('admin.searchEmployee')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -534,10 +534,10 @@ const Administration = () => {
           <Select value={filterDepartment} onValueChange={setFilterDepartment}>
             <SelectTrigger className="w-[180px]" data-testid="department-filter">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Département" />
+              <SelectValue placeholder={t('auth.department')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous départements</SelectItem>
+              <SelectItem value="all">{t('admin.allDepartments')}</SelectItem>
               {departments.map((dept) => (
                 <SelectItem key={dept.value} value={dept.value}>{dept.label}</SelectItem>
               ))}
@@ -550,7 +550,7 @@ const Administration = () => {
               <SelectValue placeholder="Site" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous les sites</SelectItem>
+              <SelectItem value="all">{t('admin.allSites')}</SelectItem>
               {sites.map((site) => (
                 <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
               ))}
@@ -562,9 +562,9 @@ const Administration = () => {
               <SelectValue placeholder="Niveau" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous niveaux</SelectItem>
-              <SelectItem value="chef_departement">Chefs de département</SelectItem>
-              <SelectItem value="employe">Employés simples</SelectItem>
+              <SelectItem value="all">{t('admin.allLevels')}</SelectItem>
+              <SelectItem value="chef_departement">{t('admin.deptHeads')}</SelectItem>
+              <SelectItem value="employe">{t('admin.simpleEmployees')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -572,7 +572,7 @@ const Administration = () => {
         {/* Employee Count */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Users className="h-4 w-4" />
-          <span>{filteredEmployees.length} employé(s) trouvé(s)</span>
+          <span>{filteredEmployees.length} {t('admin.employeesFound')}</span>
         </div>
 
         {/* Employees Grid */}
@@ -584,7 +584,7 @@ const Administration = () => {
           <Card>
             <CardContent className="text-center py-12 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Aucun employé trouvé</p>
+              <p>{t('admin.noEmployee')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -640,7 +640,7 @@ const Administration = () => {
                       data-testid={`view-${employee.id}`}
                     >
                       <Eye className="h-4 w-4 mr-1" />
-                      Voir dossier
+                      {t('admin.viewFile')}
                     </Button>
                     {isAdmin() && (
                       <>
@@ -665,13 +665,13 @@ const Administration = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleDelete(employee.id, false)}>
-                              Désactiver
+                              {t('admin.deactivate')}
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDelete(employee.id, true)}
                               className="text-destructive"
                             >
-                              Supprimer définitivement
+                              {t('admin.deletePermanent')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -690,24 +690,24 @@ const Administration = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-destructive">
                 <Trash2 className="h-5 w-5" />
-                {deleteDialog.permanent ? 'Suppression définitive' : 'Désactiver l\'employé'}
+                {deleteDialog.permanent ? t('admin.permanentDelete') : t('admin.deactivateEmployee')}
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <p className="text-muted-foreground">
                 {deleteDialog.permanent 
-                  ? 'ATTENTION: Cette action supprimera définitivement l\'employé et toutes ses données. Cette action est irréversible.'
-                  : 'Voulez-vous désactiver cet employé ? Il pourra être réactivé plus tard.'
+                  ? t('admin.permanentWarning')
+                  : t('admin.deactivateWarning')
                 }
               </p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteDialog({ open: false, id: null, permanent: false })}>
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button variant="destructive" onClick={confirmDelete}>
                 <Trash2 className="h-4 w-4 mr-2" />
-                {deleteDialog.permanent ? 'Supprimer' : 'Désactiver'}
+                {deleteDialog.permanent ? t('common.delete') : t('admin.deactivate')}
               </Button>
             </div>
           </DialogContent>

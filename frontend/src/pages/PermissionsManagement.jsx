@@ -53,7 +53,7 @@ const PermissionsManagement = () => {
       }
     } catch (error) {
       console.error('Erreur lors du chargement des permissions:', error);
-      toast.error('Erreur lors du chargement des permissions');
+      toast.error(t('permissions.loadError'));
     } finally {
       setLoading(false);
     }
@@ -63,12 +63,12 @@ const PermissionsManagement = () => {
     setScanning(true);
     try {
       const response = await api.post('/api/permissions/scan');
-      toast.success(`✅ ${response.data.message} - ${response.data.total_permissions} permissions générées`);
+      toast.success(`${response.data.total_permissions} ${t('permissions.scanned')}`);
       await fetchData();
       setHasChanges(false);
     } catch (error) {
       console.error('Erreur lors du scan:', error);
-      toast.error('Erreur lors du scan des permissions');
+      toast.error(t('permissions.scanError'));
     } finally {
       setScanning(false);
     }
@@ -99,11 +99,11 @@ const PermissionsManagement = () => {
       await api.put(`/api/permissions/roles/${roleName}`, {
         permissions: permissionsArray
       });
-      toast.success(`✅ Permissions du rôle "${roleName}" sauvegardées`);
+      toast.success(t('permissions.roleSaved'));
       setHasChanges(false);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      toast.error('Erreur lors de la sauvegarde des permissions');
+      toast.error(t('permissions.saveError'));
     } finally {
       setSaving(false);
     }
@@ -112,7 +112,6 @@ const PermissionsManagement = () => {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      // Sauvegarder les permissions de tous les rôles
       const savePromises = roles.map(role => {
         const permissionsArray = Array.from(rolePermissions[role.role] || []);
         return api.put(`/api/permissions/roles/${role.role}`, {
@@ -121,11 +120,11 @@ const PermissionsManagement = () => {
       });
       
       await Promise.all(savePromises);
-      toast.success(`✅ Toutes les permissions ont été sauvegardées`);
+      toast.success(t('permissions.allSaved'));
       setHasChanges(false);
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      toast.error('Erreur lors de la sauvegarde des permissions');
+      toast.error(t('permissions.saveError'));
     } finally {
       setSaving(false);
     }
@@ -157,8 +156,8 @@ const PermissionsManagement = () => {
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-xl font-semibold">Accès refusé</h2>
-            <p className="text-muted-foreground">Seuls les administrateurs peuvent gérer les permissions</p>
+            <h2 className="text-xl font-semibold">{t('permissions.accessDenied')}</h2>
+            <p className="text-muted-foreground">{t('permissions.adminOnly')}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -183,9 +182,9 @@ const PermissionsManagement = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
               <Shield className="h-8 w-8 text-primary" />
-              Gestion des Permissions
+              {t('permissions.title')}
             </h1>
-            <p className="text-muted-foreground">Système dynamique de gestion des accès par rôle</p>
+            <p className="text-muted-foreground">{t('permissions.subtitle')}</p>
           </div>
           
           <div className="flex gap-2">
@@ -199,7 +198,7 @@ const PermissionsManagement = () => {
               ) : (
                 <Scan className="mr-2 h-4 w-4" />
               )}
-              Scanner
+              {t('permissions.scan')}
             </Button>
             <Button 
               onClick={handleSaveAll} 
@@ -207,7 +206,7 @@ const PermissionsManagement = () => {
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               <Save className="mr-2 h-4 w-4" />
-              Sauvegarder Tout
+              {t('permissions.saveAll')}
             </Button>
           </div>
         </div>
@@ -219,9 +218,9 @@ const PermissionsManagement = () => {
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
                 <div>
-                  <h3 className="font-semibold text-orange-900 dark:text-orange-100">Modifications non sauvegardées</h3>
+                  <h3 className="font-semibold text-orange-900 dark:text-orange-100">{t('permissions.unsavedChanges')}</h3>
                   <p className="text-sm text-orange-700 dark:text-orange-200">
-                    Vous avez des modifications en attente. N'oubliez pas de sauvegarder.
+                    {t('permissions.unsavedDesc')}
                   </p>
                 </div>
               </div>
@@ -245,7 +244,7 @@ const PermissionsManagement = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{getPermissionsCount(role.role)}</div>
-                  <p className="text-xs text-muted-foreground">permissions actives</p>
+                  <p className="text-xs text-muted-foreground">{t('permissions.activePermissions')}</p>
                 </CardContent>
               </Card>
             );
@@ -287,7 +286,7 @@ const PermissionsManagement = () => {
                     >
                       {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       <Save className="mr-2 h-4 w-4" />
-                      Sauvegarder
+                      {t('permissions.save')}
                     </Button>
                   </div>
                 </CardHeader>
@@ -358,12 +357,12 @@ const PermissionsManagement = () => {
             <div className="flex items-start gap-4">
               <Shield className="h-6 w-6 text-primary mt-0.5 flex-shrink-0" />
               <div className="space-y-2">
-                <h3 className="font-semibold">À propos du système de permissions</h3>
+                <h3 className="font-semibold">{t('permissions.aboutTitle')}</h3>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• <strong>Scanner</strong> : Régénère automatiquement toutes les permissions depuis l'application</li>
-                  <li>• <strong>Wildcard (*)</strong> : Le rôle super_admin dispose d'un accès complet automatique</li>
-                  <li>• <strong>Effet immédiat</strong> : Les modifications prennent effet après sauvegarde (reconnexion recommandée)</li>
-                  <li>• <strong>Permissions groupées</strong> : Les permissions sont organisées par module fonctionnel</li>
+                  <li>• {t('permissions.aboutScan')}</li>
+                  <li>• {t('permissions.aboutWildcard')}</li>
+                  <li>• {t('permissions.aboutEffect')}</li>
+                  <li>• {t('permissions.aboutGrouped')}</li>
                 </ul>
               </div>
             </div>

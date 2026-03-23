@@ -56,19 +56,19 @@ const Communication = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.content) {
-      toast.error('Veuillez remplir tous les champs');
+      toast.error(t('comm.fillAllFields'));
       return;
     }
 
     setSubmitting(true);
     try {
       await axios.post('/api/communication/announcements', formData);
-      toast.success('Annonce publiée avec succès');
+      toast.success(t('comm.publishedSuccess'));
       setDialogOpen(false);
       setFormData({ title: '', content: '', priority: 'normal' });
       fetchAnnouncements();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la publication');
+      toast.error(error.response?.data?.detail || t('comm.publishError'));
     } finally {
       setSubmitting(false);
     }
@@ -84,21 +84,21 @@ const Communication = () => {
     
     try {
       await axios.delete(`/api/communication/announcements/${id}`);
-      toast.success('Annonce supprimée');
+      toast.success(t('comm.deleted'));
       fetchAnnouncements();
     } catch (error) {
-      toast.error('Erreur lors de la suppression');
+      toast.error(t('comm.deleteError'));
     }
   };
 
   const getPriorityConfig = (priority) => {
     switch (priority) {
       case 'urgent':
-        return { icon: AlertTriangle, color: 'destructive', label: 'Urgent', bg: 'bg-red-50 dark:bg-red-900/20 border-l-red-500' };
+        return { icon: AlertTriangle, color: 'destructive', label: t('comm.urgentPriority'), bg: 'bg-red-50 dark:bg-red-900/20 border-l-red-500' };
       case 'important':
-        return { icon: Bell, color: 'warning', label: 'Important', bg: 'bg-orange-50 dark:bg-orange-900/20 border-l-orange-500' };
+        return { icon: Bell, color: 'warning', label: t('comm.importantPriority'), bg: 'bg-orange-50 dark:bg-orange-900/20 border-l-orange-500' };
       default:
-        return { icon: Info, color: 'secondary', label: 'Normal', bg: 'bg-blue-50 dark:bg-blue-900/20 border-l-blue-500' };
+        return { icon: Info, color: 'secondary', label: t('comm.normal'), bg: 'bg-blue-50 dark:bg-blue-900/20 border-l-blue-500' };
     }
   };
 
@@ -108,8 +108,8 @@ const Communication = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Communication</h1>
-            <p className="text-muted-foreground">Annonces officielles de l'entreprise</p>
+            <h1 className="text-3xl font-bold tracking-tight">{t('comm.title')}</h1>
+            <p className="text-muted-foreground">{t('comm.subtitle')}</p>
           </div>
           
           {canEdit() && (
@@ -117,18 +117,18 @@ const Communication = () => {
               <DialogTrigger asChild>
                 <Button data-testid="new-announcement-btn">
                   <Plus className="mr-2 h-4 w-4" />
-                  Nouvelle annonce
+                  {t('comm.newAnnouncement')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>Publier une annonce</DialogTitle>
+                  <DialogTitle>{t('comm.publishAnnouncement')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Titre</Label>
+                    <Label>{t('comm.title_label')}</Label>
                     <Input
-                      placeholder="Titre de l'annonce"
+                      placeholder={t('comm.titlePlaceholder')}
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       required
@@ -136,7 +136,7 @@ const Communication = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Priorité</Label>
+                    <Label>{t('comm.priority')}</Label>
                     <Select
                       value={formData.priority}
                       onValueChange={(value) => setFormData({ ...formData, priority: value })}
@@ -145,17 +145,17 @@ const Communication = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="normal">Normal</SelectItem>
-                        <SelectItem value="important">Important</SelectItem>
-                        <SelectItem value="urgent">Urgent</SelectItem>
+                        <SelectItem value="normal">{t('comm.normal')}</SelectItem>
+                        <SelectItem value="important">{t('comm.importantPriority')}</SelectItem>
+                        <SelectItem value="urgent">{t('comm.urgentPriority')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Contenu</Label>
+                    <Label>{t('comm.content')}</Label>
                     <Textarea
-                      placeholder="Contenu de l'annonce..."
+                      placeholder={t('comm.contentPlaceholder')}
                       value={formData.content}
                       onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                       rows={5}
@@ -165,7 +165,7 @@ const Communication = () => {
                   
                   <Button type="submit" className="w-full" disabled={submitting}>
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Publier
+                    {t('comm.publish')}
                   </Button>
                 </form>
               </DialogContent>
@@ -179,7 +179,7 @@ const Communication = () => {
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total annonces</p>
+                  <p className="text-sm text-muted-foreground">{t('comm.totalAnnouncements')}</p>
                   <p className="text-2xl font-bold">{announcements.length}</p>
                 </div>
                 <Megaphone className="h-8 w-8 text-primary/50" />
@@ -190,7 +190,7 @@ const Communication = () => {
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Urgentes</p>
+                  <p className="text-sm text-muted-foreground">{t('comm.urgent')}</p>
                   <p className="text-2xl font-bold text-red-600">
                     {announcements.filter(a => a.priority === 'urgent').length}
                   </p>
@@ -203,7 +203,7 @@ const Communication = () => {
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Importantes</p>
+                  <p className="text-sm text-muted-foreground">{t('comm.important')}</p>
                   <p className="text-2xl font-bold text-orange-600">
                     {announcements.filter(a => a.priority === 'important').length}
                   </p>
@@ -219,11 +219,11 @@ const Communication = () => {
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="h-4 w-4" />
-              Annonces
+              {t('comm.announcements')}
             </TabsTrigger>
             <TabsTrigger value="chat" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
-              Live Chat
+              {t('comm.liveChat')}
             </TabsTrigger>
           </TabsList>
 
@@ -233,10 +233,10 @@ const Communication = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Megaphone className="h-5 w-5" />
-                  Annonces
+                  {t('comm.announcements')}
                 </CardTitle>
                 <CardDescription>
-                  Toutes les communications officielles
+                  {t('comm.allComms')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -247,9 +247,9 @@ const Communication = () => {
                 ) : announcements.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Megaphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucune annonce</p>
+                    <p>{t('comm.noAnnouncement')}</p>
                     {canEdit() && (
-                      <p className="text-sm mt-2">Cliquez sur "Nouvelle annonce" pour en créer une</p>
+                      <p className="text-sm mt-2">{t('comm.clickNew')}</p>
                     )}
                   </div>
                 ) : (
@@ -276,7 +276,7 @@ const Communication = () => {
                                 </div>
                                 <p className="text-sm text-foreground whitespace-pre-wrap">{announcement.content}</p>
                                 <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                                  <span>Par {announcement.author_name}</span>
+                                  <span>{t('comm.by')} {announcement.author_name}</span>
                                   <span>•</span>
                                   <span>
                                     {format(new Date(announcement.created_at), 'dd MMMM yyyy à HH:mm', { locale: fr })}
@@ -316,21 +316,21 @@ const Communication = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-destructive">
                 <Trash2 className="h-5 w-5" />
-                Supprimer l'annonce
+                {t('comm.deleteAnnouncement')}
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <p className="text-muted-foreground">
-                Voulez-vous vraiment supprimer cette annonce ? Cette action est irréversible.
+                {t('comm.deleteConfirm')}
               </p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteDialog({ open: false, id: null })}>
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button variant="destructive" onClick={confirmDelete}>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
+                {t('common.delete')}
               </Button>
             </div>
           </DialogContent>

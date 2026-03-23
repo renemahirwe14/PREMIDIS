@@ -75,7 +75,7 @@ const SitesManagement = () => {
       setEmployees(employeesRes.data.employees || []);
     } catch (error) {
       console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      toast.error(t('sites.loadError'));
     } finally {
       setLoading(false);
     }
@@ -88,17 +88,17 @@ const SitesManagement = () => {
     try {
       if (editSite) {
         await axios.put(`/api/sites/${editSite.id}`, siteForm);
-        toast.success('Site mis à jour');
+        toast.success(t('sites.siteUpdated'));
       } else {
         await axios.post('/api/sites', siteForm);
-        toast.success('Site créé');
+        toast.success(t('sites.siteCreated'));
       }
       setSiteDialogOpen(false);
       setEditSite(null);
       setSiteForm({ name: '', city: '', country: 'RDC', address: '' });
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la création/modification du site');
+      toast.error(error.response?.data?.detail || t('sites.createError'));
     } finally {
       setSubmitting(false);
     }
@@ -114,10 +114,10 @@ const SitesManagement = () => {
     
     try {
       await axios.delete(`/api/sites/${siteId}`);
-      toast.success('Site supprimé');
+      toast.success(t('sites.siteDeleted'));
       fetchData();
     } catch (error) {
-      toast.error('Erreur lors de la suppression');
+      toast.error(t('sites.deleteError'));
     }
   };
 
@@ -212,7 +212,7 @@ const SitesManagement = () => {
             </div>
             <Badge variant="secondary" className="text-lg px-4 py-2">
               <Users className="h-4 w-4 mr-2" />
-              {totalEmployees} employé{totalEmployees > 1 ? 's' : ''}
+              {totalEmployees} {totalEmployees > 1 ? t('sites.employeesCount') : t('sites.employeeCount')}
             </Badge>
           </div>
 
@@ -221,9 +221,9 @@ const SitesManagement = () => {
             <Card>
               <CardContent className="py-12 text-center">
                 <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <p className="text-muted-foreground">Aucun employé assigné à ce site</p>
+                <p className="text-muted-foreground">{t('sites.noEmployeeAssigned')}</p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Assignez des employés à ce site depuis leur dossier individuel
+                  {t('sites.assignHint')}
                 </p>
               </CardContent>
             </Card>
@@ -238,7 +238,7 @@ const SitesManagement = () => {
                           {getDepartmentLabel(deptKey)}
                         </Badge>
                         <span className="text-sm text-muted-foreground font-normal">
-                          ({(deptData.chef ? 1 : 0) + deptData.employees.length} personne{(deptData.chef ? 1 : 0) + deptData.employees.length > 1 ? 's' : ''})
+                          ({(deptData.chef ? 1 : 0) + deptData.employees.length} {(deptData.chef ? 1 : 0) + deptData.employees.length > 1 ? t('sites.persons') : t('sites.person')})
                         </span>
                       </CardTitle>
                     </div>
@@ -249,7 +249,7 @@ const SitesManagement = () => {
                       <div className="mb-4">
                         <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                           <Crown className="h-3 w-3 text-yellow-500" />
-                          Chef de département
+                          {t('sites.deptHead')}
                         </p>
                         <div 
                           className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20 cursor-pointer hover:bg-primary/10 transition-colors"
@@ -264,7 +264,7 @@ const SitesManagement = () => {
                           </Avatar>
                           <div className="flex-1">
                             <p className="font-semibold">{deptData.chef.first_name} {deptData.chef.last_name}</p>
-                            <p className="text-sm text-muted-foreground">{deptData.chef.position || 'Chef de département'}</p>
+                            <p className="text-sm text-muted-foreground">{deptData.chef.position || t('sites.deptHead')}</p>
                           </div>
                           <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                             <Crown className="h-3 w-3 mr-1" />
@@ -279,7 +279,7 @@ const SitesManagement = () => {
                       <div>
                         <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          Employés ({deptData.employees.length})
+                          {t('sites.employeesLabel')} ({deptData.employees.length})
                         </p>
                         <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                           {deptData.employees.map(emp => (
@@ -307,7 +307,7 @@ const SitesManagement = () => {
 
                     {!deptData.chef && deptData.employees.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">
-                        Aucun employé dans ce département
+                        {t('sites.noDeptEmployee')}
                       </p>
                     )}
                   </CardContent>
@@ -327,43 +327,43 @@ const SitesManagement = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Sites de travail</h1>
-            <p className="text-muted-foreground">Cliquez sur un site pour voir ses employés par département</p>
+            <h1 className="text-2xl font-bold">{t('sites.title')}</h1>
+            <p className="text-muted-foreground">{t('sites.subtitle')}</p>
           </div>
           {isAdmin() && (
             <Dialog open={siteDialogOpen} onOpenChange={setSiteDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => { setEditSite(null); setSiteForm({ name: '', city: '', country: 'RDC', address: '' }); }}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Nouveau site
+                  {t('sites.newSite')}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editSite ? 'Modifier le site' : 'Nouveau site'}</DialogTitle>
+                  <DialogTitle>{editSite ? t('sites.editSite') : t('sites.newSite')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSiteSubmit} className="space-y-4">
                   <div>
-                    <Label>Nom du site *</Label>
+                    <Label>{t('sites.siteName')}</Label>
                     <Input
                       value={siteForm.name}
                       onChange={(e) => setSiteForm({...siteForm, name: e.target.value})}
-                      placeholder="Ex: Siège Kinshasa"
+                      placeholder={t('sites.siteNamePlaceholder')}
                       required
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Ville *</Label>
+                      <Label>{t('sites.city')}</Label>
                       <Input
                         value={siteForm.city}
                         onChange={(e) => setSiteForm({...siteForm, city: e.target.value})}
-                        placeholder="Kinshasa"
+                        placeholder={t('sites.cityPlaceholder')}
                         required
                       />
                     </div>
                     <div>
-                      <Label>Pays</Label>
+                      <Label>{t('sites.country')}</Label>
                       <Select value={siteForm.country} onValueChange={(v) => setSiteForm({...siteForm, country: v})}>
                         <SelectTrigger>
                           <SelectValue />
@@ -377,17 +377,17 @@ const SitesManagement = () => {
                     </div>
                   </div>
                   <div>
-                    <Label>Adresse</Label>
+                    <Label>{t('sites.address')}</Label>
                     <Input
                       value={siteForm.address}
                       onChange={(e) => setSiteForm({...siteForm, address: e.target.value})}
-                      placeholder="Adresse complète"
+                      placeholder={t('sites.addressPlaceholder')}
                     />
                   </div>
                   <DialogFooter>
                     <Button type="submit" disabled={submitting}>
                       {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      {editSite ? 'Mettre à jour' : 'Créer'}
+                      {editSite ? t('sites.update') : t('sites.create')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -401,8 +401,8 @@ const SitesManagement = () => {
           <Card>
             <CardContent className="py-12 text-center">
               <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground">Aucun site configuré</p>
-              <p className="text-sm text-muted-foreground">Créez votre premier site de travail</p>
+              <p className="text-muted-foreground">{t('sites.noSite')}</p>
+              <p className="text-sm text-muted-foreground">{t('sites.createFirst')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -459,12 +459,12 @@ const SitesManagement = () => {
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4 text-primary" />
                           <span className="font-medium">{siteEmployees.length}</span>
-                          <span className="text-muted-foreground">employé{siteEmployees.length > 1 ? 's' : ''}</span>
+                          <span className="text-muted-foreground">{siteEmployees.length > 1 ? t('sites.employeesCount') : t('sites.employeeCount')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <UserCog className="h-4 w-4 text-muted-foreground" />
                           <span>{deptCount}</span>
-                          <span className="text-muted-foreground">dép.</span>
+                          <span className="text-muted-foreground">{t('sites.dept')}</span>
                         </div>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
@@ -482,21 +482,21 @@ const SitesManagement = () => {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-destructive">
                 <Trash2 className="h-5 w-5" />
-                Supprimer le site
+                {t('sites.deleteSite')}
               </DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <p className="text-muted-foreground">
-                Voulez-vous vraiment supprimer ce site ? Cette action est irréversible.
+                {t('sites.deleteConfirm')}
               </p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteSiteDialog({ open: false, siteId: null })}>
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button variant="destructive" onClick={confirmDeleteSite}>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
+                {t('common.delete')}
               </Button>
             </div>
           </DialogContent>

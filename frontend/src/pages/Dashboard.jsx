@@ -39,39 +39,39 @@ const Dashboard = () => {
 
   const modules = [
     {
-      title: t('communication'),
+      title: t('nav.communication'),
       icon: MessageSquare,
-      description: 'Discussions et annonces officielles',
+      description: t('dashboard.commDescription'),
       link: '/communication',
       color: 'primary',
       metric: stats?.unread_messages || 0,
-      metricLabel: 'non lus',
-      badge: stats?.unread_messages > 0 ? 'Nouveau' : null,
+      metricLabel: t('dashboard.unread'),
+      badge: stats?.unread_messages > 0 ? t('dashboard.new') : null,
       badgeVariant: 'destructive'
     },
     {
-      title: 'Gestion Personnel',
+      title: t('nav.administration'),
       icon: Users,
-      description: 'Gestion des dossiers employés',
+      description: t('dashboard.adminDescription'),
       link: '/administration',
       color: 'secondary',
       metric: stats?.total_employees || 0,
-      metricLabel: 'employés',
+      metricLabel: t('dashboard.employees'),
       canManageOnly: true
     },
     {
-      title: 'Congés',
+      title: t('nav.timeManagement'),
       icon: Clock,
-      description: 'Demandes et calendrier des congés',
+      description: t('dashboard.leavesDescription'),
       link: '/time-management',
       color: 'accent',
       metric: isAdmin() ? stats?.pending_leaves : stats?.my_leaves_pending,
-      metricLabel: 'en attente'
+      metricLabel: t('dashboard.waiting')
     },
     {
-      title: 'Comportement',
+      title: t('nav.behavior'),
       icon: UserCheck,
-      description: isAdmin() ? 'Suivi du comportement des employés' : 'Mon historique de comportement',
+      description: isAdmin() ? t('dashboard.behaviorDescAdmin') : t('dashboard.behaviorDescEmployee'),
       link: '/behavior',
       color: 'secondary'
     }
@@ -80,28 +80,28 @@ const Dashboard = () => {
   // Clickable stat cards for admin
   const statCards = [
     {
-      label: t('totalEmployees'),
+      label: t('dashboard.totalEmployees'),
       value: stats?.total_employees || 0,
       icon: Users,
       color: 'border-l-primary',
       onClick: () => navigate('/administration')
     },
     {
-      label: t('pendingLeaves'),
+      label: t('dashboard.pendingLeaves'),
       value: stats?.pending_leaves || 0,
       icon: Clock,
       color: 'border-l-secondary',
       onClick: () => navigate('/time-management?tab=leaves&status=pending')
     },
     {
-      label: t('announcements'),
+      label: t('dashboard.announcements'),
       value: stats?.total_announcements || 0,
       icon: Bell,
       color: 'border-l-accent',
       onClick: () => navigate('/communication?tab=announcements')
     },
     {
-      label: t('unreadMessages'),
+      label: t('dashboard.unreadMessages'),
       value: stats?.unread_messages || 0,
       icon: MessageSquare,
       color: 'border-l-destructive',
@@ -115,10 +115,10 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">
-            {t('welcome')}, {user?.first_name} 
+            {t('dashboard.welcome')}, {user?.first_name} 
           </h1>
           <p className="text-muted-foreground">
-            Tableau de bord PREMIDIS SARL
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
@@ -162,7 +162,7 @@ const Dashboard = () => {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Mes congés en attente</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.myPendingLeaves')}</p>
                     <p className="text-2xl font-bold">{stats?.my_leaves_pending || 0}</p>
                   </div>
                   <Clock className="h-8 w-8 text-primary/50" />
@@ -177,7 +177,7 @@ const Dashboard = () => {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Mon comportement</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.myBehavior')}</p>
                     <p className="text-2xl font-bold">{stats?.behavior_notes || 0}</p>
                   </div>
                   <UserCheck className="h-8 w-8 text-secondary/50" />
@@ -192,7 +192,7 @@ const Dashboard = () => {
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Messages non lus</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.unreadMessages')}</p>
                     <p className="text-2xl font-bold">{stats?.unread_messages || 0}</p>
                   </div>
                   <MessageSquare className="h-8 w-8 text-accent/50" />
@@ -204,7 +204,7 @@ const Dashboard = () => {
 
         {/* Module Tiles */}
         <div>
-          <h2 className="text-xl font-semibold mb-4">Modules</h2>
+          <h2 className="text-xl font-semibold mb-4">{t('dashboard.modules')}</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 stagger-children">
             {modules.map((module, index) => {
               if (module.canManageOnly && !canManageEmployees()) return null;
@@ -222,7 +222,7 @@ const Dashboard = () => {
         {isAdmin() && stats?.employees_by_department && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Employés par département</CardTitle>
+              <CardTitle className="text-lg">{t('dashboard.employeesByDept')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -232,7 +232,7 @@ const Dashboard = () => {
                     className="flex items-center justify-between p-3 rounded-lg bg-muted cursor-pointer hover:bg-muted/80 transition-colors"
                     onClick={() => navigate(`/administration?department=${dept}`)}
                   >
-                    <span className="text-sm font-medium capitalize">{t(dept) || dept.replace('_', ' ')}</span>
+                    <span className="text-sm font-medium capitalize">{t(`departments.${dept}`) || dept.replace('_', ' ')}</span>
                     <span className="text-lg font-bold text-primary">{count}</span>
                   </div>
                 ))}

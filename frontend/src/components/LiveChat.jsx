@@ -115,7 +115,7 @@ const LiveChat = () => {
       fetchMessages();
       fetchUnreadCounts();
     } catch (error) {
-      toast.error('Erreur lors de l\'envoi du message');
+      toast.error(t('chat.sendError'));
     } finally {
       setSending(false);
     }
@@ -162,13 +162,13 @@ const LiveChat = () => {
           <CardTitle className="text-lg flex items-center gap-2">
             <MessageCircle className="h-5 w-5" />
             {selectedUser ? (
-              <span>Chat avec {selectedUser.first_name} {selectedUser.last_name}</span>
+              <span>{t('chat.chatWith')} {selectedUser.first_name} {selectedUser.last_name}</span>
             ) : (
-              <span>Chat général</span>
+              <span>{t('chat.generalChat')}</span>
             )}
             {totalUnread > 0 && !selectedUser && (
               <Badge variant="destructive" className="ml-2">
-                {totalUnread} nouveau{totalUnread > 1 ? 'x' : ''}
+                {totalUnread} {totalUnread > 1 ? t('chat.newMessagesPlural') : t('chat.newMessages')}
               </Badge>
             )}
           </CardTitle>
@@ -180,7 +180,7 @@ const LiveChat = () => {
                 onClick={() => setSelectedUser(null)}
               >
                 <X className="h-4 w-4 mr-1" />
-                Retour
+                {t('chat.back')}
               </Button>
             )}
             <Button 
@@ -189,7 +189,7 @@ const LiveChat = () => {
               onClick={() => setShowUserList(!showUserList)}
             >
               <Users className="h-4 w-4 mr-1" />
-              {showUserList ? 'Masquer' : 'Utilisateurs'}
+              {showUserList ? t('chat.hide') : t('chat.users')}
             </Button>
           </div>
         </div>
@@ -199,7 +199,7 @@ const LiveChat = () => {
         {/* User List Sidebar */}
         {showUserList && (
           <div className="w-48 border-r p-2 overflow-y-auto">
-            <p className="text-xs text-muted-foreground mb-2 px-2">Discussions privées</p>
+            <p className="text-xs text-muted-foreground mb-2 px-2">{t('chat.privateChats')}</p>
             <Button
               variant={!selectedUser ? 'secondary' : 'ghost'}
               size="sm"
@@ -207,7 +207,7 @@ const LiveChat = () => {
               onClick={() => setSelectedUser(null)}
             >
               <Users className="h-4 w-4 mr-2" />
-              Tous
+              {t('chat.all')}
             </Button>
             {users.map((u) => {
               const unreadCount = unreadCounts[u.id]?.count || 0;
@@ -253,8 +253,8 @@ const LiveChat = () => {
             ) : messages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <MessageCircle className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                <p>Aucun message</p>
-                <p className="text-sm">Soyez le premier à écrire !</p>
+                <p>{t('chat.noMessage')}</p>
+                <p className="text-sm">{t('chat.beFirst')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -317,7 +317,7 @@ const LiveChat = () => {
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={selectedUser ? `Message à ${selectedUser.first_name}...` : "Message à tous..."}
+                placeholder={selectedUser ? `${t('chat.messageTo').replace('{name}', selectedUser.first_name)}` : t('chat.messageAll')}
                 disabled={sending}
                 className="flex-1"
                 data-testid="chat-input"

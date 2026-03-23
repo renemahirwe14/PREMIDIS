@@ -140,9 +140,9 @@ const NotificationCenter = () => {
       <PopoverContent className="w-96 p-0" align="end">
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h3 className="font-semibold">Notifications</h3>
+            <h3 className="font-semibold">{t('notif.title')}</h3>
             <p className="text-sm text-muted-foreground">
-              {unreadCount > 0 ? `${unreadCount} non lue(s)` : 'Tout est à jour'}
+              {unreadCount > 0 ? `${unreadCount} ${t('notif.unread')}` : t('notif.allRead')}
             </p>
           </div>
           {unreadCount > 0 && (
@@ -153,7 +153,7 @@ const NotificationCenter = () => {
               className="text-xs"
             >
               <Check className="h-3 w-3 mr-1" />
-              Tout marquer lu
+              {t('notif.markAllRead')}
             </Button>
           )}
         </div>
@@ -162,7 +162,7 @@ const NotificationCenter = () => {
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Bell className="h-12 w-12 opacity-30 mb-4" />
-              <p className="text-sm">Aucune notification</p>
+              <p className="text-sm">{t('notif.noNotification')}</p>
             </div>
           ) : (
             <div className="divide-y">

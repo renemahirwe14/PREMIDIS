@@ -87,10 +87,10 @@ const DocumentsModuleV2 = () => {
   const initSystemForms = async () => {
     try {
       await axios.post('/api/documents/forms/init-premidis-templates');
-      toast.success('Templates PREMIDIS initialisés avec succès !');
+      toast.success(t('docs.templatesInit'));
       fetchForms();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur');
+      toast.error(error.response?.data?.detail || t('common.error'));
     }
   };
 
@@ -122,7 +122,7 @@ const DocumentsModuleV2 = () => {
 
   const handleSaveDocument = async () => {
     if (!documentTitle.trim()) {
-      toast.error('Veuillez saisir un titre');
+      toast.error(t('docs.titleRequired'));
       return;
     }
 
@@ -134,20 +134,20 @@ const DocumentsModuleV2 = () => {
           title: documentTitle,
           content: content
         });
-        toast.success('Document mis à jour');
+        toast.success(t('docs.docUpdated'));
       } else {
         await axios.post('/api/documents', {
           form_id: selectedForm?.id,
           title: documentTitle,
           content: content
         });
-        toast.success('Document enregistré');
+        toast.success(t('docs.docSaved'));
       }
       
       fetchDocuments();
       setView('library');
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'enregistrement');
+      toast.error(error.response?.data?.detail || t('docs.saveError'));
     }
   };
 
@@ -161,21 +161,21 @@ const DocumentsModuleV2 = () => {
     try {
       if (itemToDelete.type === 'document') {
         await axios.delete(`/api/documents/${itemToDelete.id}`);
-        toast.success('Document supprimé');
+        toast.success(t('docs.docDeleted'));
         fetchDocuments();
       } else if (itemToDelete.type === 'hr-doc') {
         await axios.delete(`/api/hr-documents/${itemToDelete.id}`);
-        toast.success('Document supprimé');
+        toast.success(t('docs.docDeleted'));
         fetchDocuments();
       } else if (itemToDelete.type === 'form') {
         await axios.delete(`/api/documents/forms/${itemToDelete.id}`);
-        toast.success('Forme supprimée');
+        toast.success(t('docs.formDeleted'));
         fetchForms();
       }
       setShowDeleteDialog(false);
       setItemToDelete(null);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression');
+      toast.error(error.response?.data?.detail || t('docs.deleteError'));
     }
   };
 
@@ -184,7 +184,7 @@ const DocumentsModuleV2 = () => {
     if (!file) return;
 
     if (!file.name.endsWith('.docx')) {
-      toast.error('Seuls les fichiers .docx sont supportés');
+      toast.error(t('docs.onlyDocx'));
       return;
     }
 
@@ -196,10 +196,10 @@ const DocumentsModuleV2 = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      toast.success('Document converti et importé avec succès !');
+      toast.success(t('docs.uploadSuccess'));
       fetchForms();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'upload');
+      toast.error(error.response?.data?.detail || t('docs.uploadError'));
     }
   };
 
@@ -231,14 +231,14 @@ const DocumentsModuleV2 = () => {
                 className="mb-3"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Retour au Tableau de Bord
+                {t('docs.backToDashboard')}
               </Button>
               <h1 className="text-4xl font-bold flex items-center gap-3">
                 <FileText className="h-10 w-10" />
-                📄 Documents
+                📄 {t('docs.title')}
               </h1>
               <p className="text-muted-foreground mt-2">
-                Bibliothèque de formes et historique des documents
+                {t('docs.subtitle')}
               </p>
             </div>
           </div>
@@ -247,7 +247,7 @@ const DocumentsModuleV2 = () => {
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-2xl">📚 Formes de Documents</CardTitle>
+                <CardTitle className="text-2xl">📚 {t('docs.documentForms')}</CardTitle>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
@@ -255,7 +255,7 @@ const DocumentsModuleV2 = () => {
                     onClick={initSystemForms}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Initialiser Templates PREMIDIS
+                    {t('docs.initTemplates')}
                   </Button>
                   <Button
                     variant="default"
@@ -263,7 +263,7 @@ const DocumentsModuleV2 = () => {
                     onClick={() => document.getElementById('upload-form').click()}
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    Uploader un Document (.docx)
+                    {t('docs.uploadDocx')}
                   </Button>
                   <input
                     id="upload-form"
@@ -279,10 +279,10 @@ const DocumentsModuleV2 = () => {
               {forms.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-4">Aucune forme disponible</p>
+                  <p className="text-muted-foreground mb-4">{t('docs.noForms')}</p>
                   <Button onClick={initSystemForms}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Initialiser Templates PREMIDIS
+                    {t('docs.initTemplates')}
                   </Button>
                 </div>
               ) : (
@@ -300,7 +300,7 @@ const DocumentsModuleV2 = () => {
                           
                           <h3 className="font-semibold text-lg mb-2">{form.name}</h3>
                           <p className="text-xs text-muted-foreground mb-4">
-                            {form.description || 'Aucune description'}
+                            {form.description || t('docs.noDescription')}
                           </p>
                           
                           <Button
@@ -308,7 +308,7 @@ const DocumentsModuleV2 = () => {
                             size="sm"
                             onClick={() => handleUseForm(form)}
                           >
-                            Utiliser
+                            {t('docs.use')}
                           </Button>
                           
                           {!form.is_system && (
@@ -337,13 +337,13 @@ const DocumentsModuleV2 = () => {
           {/* Document History */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">📁 Historique (Mes Documents)</CardTitle>
+              <CardTitle className="text-2xl">📁 {t('docs.history')}</CardTitle>
             </CardHeader>
             <CardContent>
               {documents.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Aucun document créé</p>
+                  <p className="text-muted-foreground">{t('docs.noDocument')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -365,11 +365,11 @@ const DocumentsModuleV2 = () => {
                             <div className="flex-1">
                               <h4 className="font-semibold text-lg">{displayTitle}</h4>
                               <div className="text-sm text-muted-foreground">
-                                <p>Créé le: {new Date(doc.created_at).toLocaleString('fr-FR')}</p>
-                                <p>Auteur: {authorName}</p>
-                                {employeeName && <p>Employé: {employeeName}</p>}
+                                <p>{t('docs.createdOn')}: {new Date(doc.created_at).toLocaleString('fr-FR')}</p>
+                                <p>{t('docs.author')}: {authorName}</p>
+                                {employeeName && <p>{t('docs.employeeLabel')}: {employeeName}</p>}
                                 {!isHRDoc && doc.updated_at && (
-                                  <p>Modifié le: {new Date(doc.updated_at).toLocaleString('fr-FR')}</p>
+                                  <p>{t('docs.modifiedOn')}: {new Date(doc.updated_at).toLocaleString('fr-FR')}</p>
                                 )}
                               </div>
                             </div>
@@ -429,13 +429,13 @@ const DocumentsModuleV2 = () => {
                 onClick={() => setView('library')}
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
-                Retour
+                {t('docs.back')}
               </Button>
               
               <Input
                 value={documentTitle}
                 onChange={(e) => setDocumentTitle(e.target.value)}
-                placeholder="Titre du document"
+                placeholder={t('docs.docTitle')}
                 className="max-w-md text-lg font-semibold"
               />
               
@@ -443,21 +443,21 @@ const DocumentsModuleV2 = () => {
                 <Button
                   variant={editMode ? "default" : "outline"}
                   onClick={() => setEditMode(!editMode)}
-                  title="Mode édition manuelle - Cliquez sur n'importe quel élément pour le rendre éditable"
+                  title={t('docs.editModeTitle')}
                 >
                   <MousePointer className="h-4 w-4 mr-2" />
-                  {editMode ? "Mode Édition ON" : "Activer Édition"}
+                  {editMode ? t('docs.editModeOn') : t('docs.enableEdit')}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handlePrint}
                 >
                   <Printer className="h-4 w-4 mr-2" />
-                  Imprimer
+                  {t('docs.print')}
                 </Button>
                 <Button onClick={handleSaveDocument}>
                   <Save className="h-4 w-4 mr-2" />
-                  Enregistrer
+                  {t('docs.save')}
                 </Button>
               </div>
             </div>
@@ -468,7 +468,7 @@ const DocumentsModuleV2 = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => execCommand('bold')}
-                title="Gras"
+                title={t('docs.bold')}
               >
                 <Bold className="h-4 w-4" />
               </Button>
@@ -476,7 +476,7 @@ const DocumentsModuleV2 = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => execCommand('italic')}
-                title="Italique"
+                title={t('docs.italic')}
               >
                 <Italic className="h-4 w-4" />
               </Button>
@@ -484,7 +484,7 @@ const DocumentsModuleV2 = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => execCommand('underline')}
-                title="Souligné"
+                title={t('docs.underline')}
               >
                 <UnderlineIcon className="h-4 w-4" />
               </Button>
@@ -642,7 +642,7 @@ const DocumentsModuleV2 = () => {
                 onClick={() => setView('library')}
               >
                 <ArrowLeft className="h-5 w-5 mr-2" />
-                Retour
+                {t('docs.back')}
               </Button>
               
               <h2 className="text-lg font-semibold">{documentTitle}</h2>
@@ -652,7 +652,7 @@ const DocumentsModuleV2 = () => {
                 onClick={handlePrint}
               >
                 <Printer className="h-4 w-4 mr-2" />
-                Imprimer
+                {t('docs.print')}
               </Button>
             </div>
           </div>
@@ -719,17 +719,17 @@ const DocumentsModuleV2 = () => {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogTitle>{t('docs.confirmDelete')}</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer "{itemToDelete?.name}" ? Cette action est irréversible.
+              {t('docs.deleteConfirm').replace('{name}', itemToDelete?.name || '')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleDeleteConfirm}>
-              Supprimer
+              {t('common.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -20,18 +20,20 @@ import axios from '../config/api';
 import { toast } from 'sonner';
 
 // Types de comportement étendus
-const BEHAVIOR_TYPES = [
-  { value: 'sanction', label: 'Sanction', icon: AlertTriangle, color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-500' },
-  { value: 'warning', label: 'Avertissement', icon: AlertTriangle, color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-500' },
-  { value: 'dismissal', label: 'Lettre de renvoi', icon: FileText, color: 'text-red-700', bgColor: 'bg-red-100', borderColor: 'border-red-600' },
-  { value: 'note', label: 'Note disciplinaire', icon: MessageCircle, color: 'text-yellow-700', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-500' },
-  { value: 'praise', label: 'Félicitations', icon: Award, color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-500' },
-  { value: 'other', label: 'Autre', icon: File, color: 'text-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-500' }
+const BEHAVIOR_TYPES_CONFIG = [
+  { value: 'sanction', labelKey: 'behavior.types.sanction', icon: AlertTriangle, color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-500' },
+  { value: 'warning', labelKey: 'behavior.types.warning', icon: AlertTriangle, color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-500' },
+  { value: 'dismissal', labelKey: 'behavior.types.dismissal', icon: FileText, color: 'text-red-700', bgColor: 'bg-red-100', borderColor: 'border-red-600' },
+  { value: 'note', labelKey: 'behavior.types.note', icon: MessageCircle, color: 'text-yellow-700', bgColor: 'bg-yellow-50', borderColor: 'border-yellow-500' },
+  { value: 'praise', labelKey: 'behavior.types.praise', icon: Award, color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-500' },
+  { value: 'other', labelKey: 'behavior.types.other', icon: File, color: 'text-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-500' }
 ];
 
 const Behavior = () => {
   const { user, isAdmin } = useAuth();
   const { t } = useLanguage();
+  
+  const BEHAVIOR_TYPES = BEHAVIOR_TYPES_CONFIG.map(bt => ({ ...bt, label: t(bt.labelKey) }));
   const [behaviors, setBehaviors] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +86,7 @@ const Behavior = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.employee_id || !formData.note) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      toast.error(t('behavior.fillRequired'));
       return;
     }
 
@@ -92,7 +94,7 @@ const Behavior = () => {
     try {
       console.log('Submitting behavior note with data:', formData);
       await axios.post('/api/behavior', formData);
-      toast.success('Note de comportement ajoutée avec succès');
+      toast.success(t('behavior.noteAdded'));
       setDialogOpen(false);
       setFormData({ 
         employee_id: '', 
@@ -106,7 +108,7 @@ const Behavior = () => {
     } catch (error) {
       console.error('Behavior creation error:', error);
       console.error('Error response:', error.response);
-      toast.error(error.response?.data?.detail || error.message || 'Erreur lors de l\'ajout');
+      toast.error(error.response?.data?.detail || error.message || t('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +163,7 @@ const Behavior = () => {
         file_name: file.name,
         file_url: response.data.url
       }));
-      toast.success(`Document "${file.name}" ajouté avec succès`);
+      toast.success(t('behavior.docAdded'));
     } catch (error) {
       console.error('Upload error:', error);
       console.error('Error response:', error.response);
@@ -189,12 +191,12 @@ const Behavior = () => {
     
     try {
       await axios.delete(`/api/behavior/${behaviorToDelete.id}`);
-      toast.success('Note de comportement supprimée');
+      toast.success(t('behavior.noteDeleted'));
       setDeleteDialogOpen(false);
       setBehaviorToDelete(null);
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de la suppression');
+      toast.error(error.response?.data?.detail || t('common.error'));
     }
   };
 
@@ -212,7 +214,7 @@ const Behavior = () => {
     a.href = url;
     a.download = `comportements_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
-    toast.success('Export réussi');
+    toast.success(t('admin.exportSuccess'));
   };
 
   const filteredBehaviors = behaviors.filter(b => {
@@ -234,38 +236,38 @@ const Behavior = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dossier Comportement</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('behavior.title')}</h1>
             <p className="text-muted-foreground">
-              {isAdmin() ? 'Gestion professionnelle des notes disciplinaires et documents RH' : 'Votre dossier comportement'}
+              {isAdmin() ? t('behavior.subtitleAdmin') : t('behavior.subtitleEmployee')}
             </p>
           </div>
           
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExport}>
               <Download className="mr-2 h-4 w-4" />
-              Exporter
+              {t('behavior.export')}
             </Button>
             {isAdmin() && (
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button data-testid="add-behavior-btn">
                     <Plus className="mr-2 h-4 w-4" />
-                    Ajouter une note
+                    {t('behavior.addNote')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Nouvelle note de comportement</DialogTitle>
+                    <DialogTitle>{t('behavior.newNote')}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Employé *</Label>
+                      <Label>{t('behavior.employee')}</Label>
                       <Select
                         value={formData.employee_id}
                         onValueChange={(value) => setFormData({ ...formData, employee_id: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un employé" />
+                          <SelectValue placeholder={t('behavior.selectEmployee')} />
                         </SelectTrigger>
                         <SelectContent>
                           {employees.map((emp) => (
@@ -278,7 +280,7 @@ const Behavior = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Type de note *</Label>
+                      <Label>{t('behavior.noteType')}</Label>
                       <Select
                         value={formData.type}
                         onValueChange={(value) => setFormData({ ...formData, type: value })}
@@ -303,7 +305,7 @@ const Behavior = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Date *</Label>
+                      <Label>{t('behavior.dateLabel')}</Label>
                       <Input
                         type="date"
                         value={formData.date}
@@ -313,11 +315,11 @@ const Behavior = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Description / Motif *</Label>
+                      <Label>{t('behavior.description')}</Label>
                       <Textarea
                         value={formData.note}
                         onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                        placeholder="Décrivez la cause, le contexte et les faits observés..."
+                        placeholder={t('behavior.descPlaceholder')}
                         rows={5}
                         required
                       />
@@ -325,7 +327,7 @@ const Behavior = () => {
 
                     {/* Document upload section */}
                     <div className="space-y-2">
-                      <Label>Document officiel</Label>
+                      <Label>{t('behavior.officialDoc')}</Label>
                       <div className="border-2 border-dashed rounded-lg p-4">
                         {formData.file_url ? (
                           <div className="space-y-3">
@@ -334,7 +336,7 @@ const Behavior = () => {
                                 <FileText className="h-8 w-8 text-primary flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium truncate">{formData.file_name}</p>
-                                  <p className="text-xs text-muted-foreground">Document ajouté</p>
+                                  <p className="text-xs text-muted-foreground">{t('behavior.docAdded')}</p>
                                 </div>
                               </div>
                               <div className="flex gap-1 flex-shrink-0">
@@ -370,17 +372,17 @@ const Behavior = () => {
                                 <Upload className="h-10 w-10 text-muted-foreground mb-3" />
                               )}
                               <p className="text-sm font-medium mb-1">
-                                {uploadingDoc ? 'Upload en cours...' : 'Cliquez pour uploader un document'}
+                                {uploadingDoc ? t('common.loading') : t('behavior.uploadDoc')}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                PDF, Images, Word (Max 10 MB)
+                                {t('behavior.uploadFormats')}
                               </p>
                             </div>
                           </label>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Lettre de sanction, avertissement, justificatif, etc.
+                        {t('behavior.docHint')}
                       </p>
                     </div>
 
@@ -390,11 +392,11 @@ const Behavior = () => {
                       disabled={submitting || uploadingDoc}
                     >
                       {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      {uploadingDoc ? 'Upload du document en cours...' : 'Enregistrer la note'}
+                      {uploadingDoc ? t('behavior.uploading') : t('behavior.save')}
                     </Button>
                     {uploadingDoc && (
                       <p className="text-xs text-amber-600 text-center">
-                        ⏳ Veuillez patienter pendant l'upload du document
+                        {t('behavior.uploadWait')}
                       </p>
                     )}
                   </form>
@@ -410,7 +412,7 @@ const Behavior = () => {
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-sm text-muted-foreground">{t('behavior.total')}</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
                 <Clock className="h-8 w-8 text-primary/50" />
@@ -421,7 +423,7 @@ const Behavior = () => {
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Sanctions/Avertissements</p>
+                  <p className="text-sm text-muted-foreground">{t('behavior.sanctionsWarnings')}</p>
                   <p className="text-2xl font-bold text-red-600">{stats.sanctions}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-red-500/50" />
@@ -432,7 +434,7 @@ const Behavior = () => {
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Félicitations</p>
+                  <p className="text-sm text-muted-foreground">{t('behavior.praise')}</p>
                   <p className="text-2xl font-bold text-green-600">{stats.praise}</p>
                 </div>
                 <Award className="h-8 w-8 text-green-500/50" />
@@ -443,7 +445,7 @@ const Behavior = () => {
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Avec documents</p>
+                  <p className="text-sm text-muted-foreground">{t('behavior.withDocs')}</p>
                   <p className="text-2xl font-bold text-blue-600">{stats.withDocs}</p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-500/50" />
@@ -458,7 +460,7 @@ const Behavior = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un employé..."
+                placeholder={t('behavior.searchEmployee')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -470,7 +472,7 @@ const Behavior = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
+                <SelectItem value="all">{t('behavior.allTypes')}</SelectItem>
                 {BEHAVIOR_TYPES.map(type => (
                   <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
                 ))}
@@ -482,9 +484,9 @@ const Behavior = () => {
         {/* Behavior List - Card Style like Documents Module */}
         <Card>
           <CardHeader>
-            <CardTitle>Historique Comportement</CardTitle>
+            <CardTitle>{t('behavior.history')}</CardTitle>
             <CardDescription>
-              Dossier RH professionnel avec documents associés
+              {t('behavior.historyDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -495,8 +497,8 @@ const Behavior = () => {
             ) : filteredBehaviors.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <User className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium mb-2">Aucune note de comportement</p>
-                <p className="text-sm">Le dossier comportement est vide</p>
+                <p className="text-lg font-medium mb-2">{t('behavior.noNote')}</p>
+                <p className="text-sm">{t('behavior.emptyFile')}</p>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -522,22 +524,22 @@ const Behavior = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogTitle>{t('behavior.confirmDelete')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer cette note de comportement pour{' '}
+              {t('behavior.deleteConfirm')}{' '}
               <span className="font-semibold">{behaviorToDelete?.employee_name}</span> ?
-              Cette action est irréversible.
+              {t('behavior.deleteIrreversible')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setBehaviorToDelete(null)}>
-              Annuler
+              {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Supprimer
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

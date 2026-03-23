@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -12,7 +13,8 @@ import API_URL from "../config/api";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: email, 2: token, 3: new password
+  const { t } = useLanguage();
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -28,14 +30,13 @@ const ForgotPassword = () => {
 
     try {
       const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
-      setSuccess('Un email de réinitialisation a été envoyé à votre adresse');
-      // For demo purposes, show the token
+      setSuccess(t('auth.resetEmailSent'));
       if (response.data.token) {
         setToken(response.data.token);
       }
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Une erreur est survenue');
+      setError(err.response?.data?.detail || t('auth.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -46,12 +47,12 @@ const ForgotPassword = () => {
     setError('');
 
     if (newPassword !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
+      setError(t('auth.passwordsNoMatch'));
       return;
     }
 
     if (newPassword.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères');
+      setError(t('auth.passwordMinLength'));
       return;
     }
 
@@ -64,7 +65,7 @@ const ForgotPassword = () => {
       });
       setStep(3);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Token invalide ou expiré');
+      setError(err.response?.data?.detail || t('auth.tokenInvalid'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +81,6 @@ const ForgotPassword = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-secondary/80 backdrop-blur-sm" />
       
       <div className="relative z-10 w-full max-w-md animate-slide-in">
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3 bg-white/10 backdrop-blur-xl rounded-2xl px-6 py-3 border border-white/20">
             <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -98,14 +98,14 @@ const ForgotPassword = () => {
         <Card className="glass-effect border-white/20 shadow-2xl">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold">
-              {step === 1 && "Mot de passe oublié"}
-              {step === 2 && "Réinitialisation"}
-              {step === 3 && "Succès !"}
+              {step === 1 && t('auth.forgotTitle')}
+              {step === 2 && t('auth.resetTitle')}
+              {step === 3 && t('auth.successTitle')}
             </CardTitle>
             <CardDescription>
-              {step === 1 && "Entrez votre email pour recevoir un lien de réinitialisation"}
-              {step === 2 && "Entrez le code reçu et votre nouveau mot de passe"}
-              {step === 3 && "Votre mot de passe a été réinitialisé"}
+              {step === 1 && t('auth.forgotSubtitle')}
+              {step === 2 && t('auth.resetSubtitle')}
+              {step === 3 && t('auth.resetSuccess')}
             </CardDescription>
           </CardHeader>
           
@@ -119,13 +119,13 @@ const ForgotPassword = () => {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Adresse email</Label>
+                  <Label htmlFor="email">{t('auth.emailAddress')}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="exemple@premierdis.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -139,12 +139,12 @@ const ForgotPassword = () => {
               <CardFooter className="flex flex-col gap-4">
                 <Button type="submit" className="w-full h-11" disabled={loading} data-testid="send-reset-btn">
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
-                  Envoyer le lien
+                  {t('auth.sendLink')}
                 </Button>
 
                 <Link to="/login" className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                   <ArrowLeft className="h-4 w-4" />
-                  Retour à la connexion
+                  {t('auth.backToLogin')}
                 </Link>
               </CardFooter>
             </form>
@@ -166,11 +166,11 @@ const ForgotPassword = () => {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="token">Code de vérification</Label>
+                  <Label htmlFor="token">{t('auth.verificationCode')}</Label>
                   <Input
                     id="token"
                     type="text"
-                    placeholder="Entrez le code reçu par email"
+                    placeholder={t('auth.enterCode')}
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     required
@@ -179,7 +179,7 @@ const ForgotPassword = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                  <Label htmlFor="newPassword">{t('auth.newPassword')}</Label>
                   <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -195,7 +195,7 @@ const ForgotPassword = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                  <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
                   <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -214,7 +214,7 @@ const ForgotPassword = () => {
               <CardFooter className="flex flex-col gap-4">
                 <Button type="submit" className="w-full h-11" disabled={loading} data-testid="reset-password-btn">
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Réinitialiser le mot de passe
+                  {t('auth.resetPassword')}
                 </Button>
               </CardFooter>
             </form>
@@ -228,10 +228,10 @@ const ForgotPassword = () => {
                 </div>
               </div>
               <p className="text-muted-foreground">
-                Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter.
+                {t('auth.passwordChanged')}
               </p>
               <Button onClick={() => navigate('/login')} className="w-full" data-testid="back-to-login">
-                Se connecter
+                {t('auth.signIn')}
               </Button>
             </CardContent>
           )}

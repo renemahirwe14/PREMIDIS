@@ -38,9 +38,9 @@ const Settings = () => {
     setLoading(true);
     try {
       await updateUser(formData);
-      toast.success('Profil mis à jour');
+      toast.success(t('settings.profileUpdated'));
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour');
+      toast.error(t('settings.profileError'));
     } finally {
       setLoading(false);
     }
@@ -58,11 +58,11 @@ const Settings = () => {
       const response = await axios.post(`/api/upload/avatar/${user.id}`, formDataUpload, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      toast.success('Photo de profil mise à jour');
+      toast.success(t('settings.avatarUpdated'));
       // Refresh user data
       window.location.reload();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors de l\'upload');
+      toast.error(error.response?.data?.detail || t('settings.avatarError'));
     } finally {
       setAvatarLoading(false);
     }
@@ -72,12 +72,12 @@ const Settings = () => {
     e.preventDefault();
     
     if (passwordData.new_password !== passwordData.confirm_password) {
-      toast.error('Les mots de passe ne correspondent pas');
+      toast.error(t('auth.passwordsNoMatch'));
       return;
     }
     
     if (passwordData.new_password.length < 6) {
-      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      toast.error(t('auth.passwordMinLength'));
       return;
     }
     
@@ -87,11 +87,11 @@ const Settings = () => {
         current_password: passwordData.current_password,
         new_password: passwordData.new_password
       });
-      toast.success('Mot de passe modifié avec succès');
+      toast.success(t('settings.passwordChanged'));
       setPasswordDialogOpen(false);
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Erreur lors du changement de mot de passe');
+      toast.error(error.response?.data?.detail || t('settings.passwordError'));
     } finally {
       setPasswordLoading(false);
     }
@@ -101,8 +101,8 @@ const Settings = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl" data-testid="settings-page">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('settings')}</h1>
-          <p className="text-muted-foreground">Gérez vos préférences et votre profil</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h1>
+          <p className="text-muted-foreground">{t('settings.subtitle')}</p>
         </div>
 
         {/* Profile Section */}
@@ -110,9 +110,9 @@ const Settings = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
-              <CardTitle>Profil</CardTitle>
+              <CardTitle>{t('settings.profile')}</CardTitle>
             </div>
-            <CardDescription>Informations personnelles</CardDescription>
+            <CardDescription>{t('settings.personalInfo')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
@@ -150,7 +150,7 @@ const Settings = () => {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>{t('firstName')}</Label>
+                <Label>{t('auth.firstName')}</Label>
                 <Input
                   value={formData.first_name}
                   onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
@@ -158,7 +158,7 @@ const Settings = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>{t('lastName')}</Label>
+                <Label>{t('auth.lastName')}</Label>
                 <Input
                   value={formData.last_name}
                   onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
@@ -166,11 +166,11 @@ const Settings = () => {
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>Téléphone</Label>
+                <Label>{t('settings.phone')}</Label>
                 <Input
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+243 xxx xxx xxx"
+                  placeholder={t('settings.phonePlaceholder')}
                   data-testid="settings-phone"
                 />
               </div>
@@ -178,7 +178,7 @@ const Settings = () => {
 
             <Button onClick={handleSave} disabled={loading} data-testid="save-profile-btn">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('save')}
+              {t('settings.save')}
             </Button>
           </CardContent>
         </Card>
@@ -188,9 +188,9 @@ const Settings = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-primary" />
-              <CardTitle>{t('selectLanguage')}</CardTitle>
+              <CardTitle>{t('settings.selectLanguage')}</CardTitle>
             </div>
-            <CardDescription>Choisissez votre langue préférée</CardDescription>
+            <CardDescription>{t('settings.selectLanguageDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -220,31 +220,31 @@ const Settings = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
-              <CardTitle>Notifications</CardTitle>
+              <CardTitle>{t('settings.notifications')}</CardTitle>
             </div>
-            <CardDescription>Gérez vos préférences de notification</CardDescription>
+            <CardDescription>{t('settings.notifDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Notifications par email</p>
-                <p className="text-sm text-muted-foreground">Recevoir des notifications par email</p>
+                <p className="font-medium">{t('settings.emailNotif')}</p>
+                <p className="text-sm text-muted-foreground">{t('settings.emailNotifDesc')}</p>
               </div>
               <Switch defaultChecked data-testid="email-notifications" />
             </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Notifications push</p>
-                <p className="text-sm text-muted-foreground">Notifications dans le navigateur</p>
+                <p className="font-medium">{t('settings.pushNotif')}</p>
+                <p className="text-sm text-muted-foreground">{t('settings.pushNotifDesc')}</p>
               </div>
               <Switch data-testid="push-notifications" />
             </div>
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Rappels de congés</p>
-                <p className="text-sm text-muted-foreground">Rappels pour les demandes de congés</p>
+                <p className="font-medium">{t('settings.leaveReminders')}</p>
+                <p className="text-sm text-muted-foreground">{t('settings.leaveRemindersDesc')}</p>
               </div>
               <Switch defaultChecked data-testid="leave-reminders" />
             </div>
@@ -256,30 +256,30 @@ const Settings = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              <CardTitle>Sécurité</CardTitle>
+              <CardTitle>{t('settings.security')}</CardTitle>
             </div>
-            <CardDescription>Paramètres de sécurité de votre compte</CardDescription>
+            <CardDescription>{t('settings.securityDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Changer le mot de passe</p>
-                <p className="text-sm text-muted-foreground">Mettre à jour votre mot de passe</p>
+                <p className="font-medium">{t('settings.changePassword')}</p>
+                <p className="text-sm text-muted-foreground">{t('settings.changePasswordDesc')}</p>
               </div>
               <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Lock className="mr-2 h-4 w-4" />
-                    Modifier
+                    {t('settings.modify')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Changer le mot de passe</DialogTitle>
+                    <DialogTitle>{t('settings.changePassword')}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Mot de passe actuel</Label>
+                      <Label>{t('settings.currentPassword')}</Label>
                       <Input
                         type="password"
                         value={passwordData.current_password}
@@ -288,7 +288,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Nouveau mot de passe</Label>
+                      <Label>{t('settings.newPassword')}</Label>
                       <Input
                         type="password"
                         value={passwordData.new_password}
@@ -298,7 +298,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Confirmer le nouveau mot de passe</Label>
+                      <Label>{t('settings.confirmNewPassword')}</Label>
                       <Input
                         type="password"
                         value={passwordData.confirm_password}
@@ -308,7 +308,7 @@ const Settings = () => {
                     </div>
                     <Button type="submit" className="w-full" disabled={passwordLoading}>
                       {passwordLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Enregistrer
+                      {t('common.save')}
                     </Button>
                   </form>
                 </DialogContent>
@@ -322,18 +322,18 @@ const Settings = () => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Palette className="h-5 w-5 text-primary" />
-              <CardTitle>Apparence</CardTitle>
+              <CardTitle>{t('settings.appearance')}</CardTitle>
             </div>
-            <CardDescription>Personnalisez l'apparence de l'application</CardDescription>
+            <CardDescription>{t('settings.appearanceDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {theme === 'dark' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                 <div>
-                  <p className="font-medium">Mode sombre</p>
+                  <p className="font-medium">{t('settings.darkMode')}</p>
                   <p className="text-sm text-muted-foreground">
-                    {theme === 'dark' ? 'Activé' : 'Désactivé'}
+                    {theme === 'dark' ? t('settings.enabled') : t('settings.disabled')}
                   </p>
                 </div>
               </div>

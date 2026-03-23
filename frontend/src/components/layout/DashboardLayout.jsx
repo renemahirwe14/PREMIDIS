@@ -44,15 +44,15 @@ const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'dashboard' },
-    { path: '/communication', icon: MessageSquare, label: 'communication' },
-    { path: '/administration', icon: Users, label: 'Gestion Personnel', canManage: true },
-    { path: '/time-management', icon: Clock, label: 'Congés' },
-    { path: '/behavior', icon: UserCheck, label: 'Comportement' },
-    { path: '/documents', icon: FileText, label: 'Documents' },
-    { path: '/sites', icon: Building2, label: 'Sites de travail', adminOnly: true },
-    { path: '/permissions', icon: Shield, label: 'Permissions', adminOnly: true },
-    { path: '/my-profile', icon: User, label: 'Mon Dossier', employeeOnly: true },
+    { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+    { path: '/communication', icon: MessageSquare, labelKey: 'nav.communication' },
+    { path: '/administration', icon: Users, labelKey: 'nav.administration', canManage: true },
+    { path: '/time-management', icon: Clock, labelKey: 'nav.timeManagement' },
+    { path: '/behavior', icon: UserCheck, labelKey: 'nav.behavior' },
+    { path: '/documents', icon: FileText, labelKey: 'nav.documents' },
+    { path: '/sites', icon: Building2, labelKey: 'nav.sites', adminOnly: true },
+    { path: '/permissions', icon: Shield, labelKey: 'nav.permissions', adminOnly: true },
+    { path: '/my-profile', icon: User, labelKey: 'nav.myProfile', employeeOnly: true },
   ];
 
   const handleLogout = () => {
@@ -80,10 +80,10 @@ const DashboardLayout = ({ children }) => {
                 : 'hover:bg-muted text-foreground/70 hover:text-foreground'
               }
             `}
-            data-testid={`nav-${item.label}`}
+            data-testid={`nav-${item.labelKey}`}
           >
             <item.icon className="h-5 w-5" />
-            <span className="font-medium">{typeof item.label === 'string' && item.label.includes(' ') ? item.label : t(item.label)}</span>
+            <span className="font-medium">{t(item.labelKey)}</span>
           </Link>
         );
       })}
@@ -110,7 +110,7 @@ const DashboardLayout = ({ children }) => {
               data-testid="nav-settings"
             >
               <Settings className="h-5 w-5" />
-              <span className="font-medium">{t('settings')}</span>
+              <span className="font-medium">{t('nav.settings')}</span>
             </Link>
           </div>
         </div>
@@ -143,7 +143,7 @@ const DashboardLayout = ({ children }) => {
               </Button>
               
               <div className="hidden sm:block">
-                <h2 className="text-lg font-semibold">{t('welcome')}, {user?.first_name}</h2>
+                <h2 className="text-lg font-semibold">{t('dashboard.welcome')}, {user?.first_name}</h2>
                 <p className="text-sm text-muted-foreground">{user?.role?.replace('_', ' ')}</p>
               </div>
             </div>
@@ -211,13 +211,13 @@ const DashboardLayout = ({ children }) => {
                   <DropdownMenuItem asChild>
                     <Link to="/settings" className="cursor-pointer">
                       <Settings className="mr-2 h-4 w-4" />
-                      {t('settings')}
+                      {t('nav.settings')}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
-                    {t('logout')}
+                    {t('nav.logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
