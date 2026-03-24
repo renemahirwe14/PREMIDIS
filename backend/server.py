@@ -3511,6 +3511,102 @@ async def delete_department(
     await db.departments.delete_one({"id": dept_id})
     return {"message": "Département supprimé"}
 
+# ==================== PAYS ROUTES ====================
+countries_router = APIRouter(prefix="/countries", tags=["Pays"])
+
+class CountryCreate(BaseModel):
+    code: str
+    name: str
+
+@countries_router.get("")
+async def list_countries(current_user: dict = Depends(get_current_user)):
+    """Get all countries"""
+    countries = await db.countries.find({}, {"_id": 0}).to_list(200)
+    
+    # If no countries in DB, return default list
+    if not countries:
+        default_countries = [
+            {"code": "CD", "name": "RD Congo"},
+            {"code": "CG", "name": "Congo Brazzaville"},
+            {"code": "RW", "name": "Rwanda"},
+            {"code": "BI", "name": "Burundi"},
+            {"code": "UG", "name": "Ouganda"},
+            {"code": "KE", "name": "Kenya"},
+            {"code": "TZ", "name": "Tanzanie"},
+            {"code": "ZM", "name": "Zambie"},
+            {"code": "AO", "name": "Angola"},
+            {"code": "CF", "name": "Centrafrique"},
+            {"code": "CM", "name": "Cameroun"},
+            {"code": "GA", "name": "Gabon"},
+            {"code": "SN", "name": "Sénégal"},
+            {"code": "CI", "name": "Côte d'Ivoire"},
+            {"code": "BF", "name": "Burkina Faso"},
+            {"code": "ML", "name": "Mali"},
+            {"code": "NE", "name": "Niger"},
+            {"code": "TD", "name": "Tchad"},
+            {"code": "BJ", "name": "Bénin"},
+            {"code": "TG", "name": "Togo"},
+            {"code": "GH", "name": "Ghana"},
+            {"code": "NG", "name": "Nigeria"},
+            {"code": "ZA", "name": "Afrique du Sud"},
+            {"code": "MA", "name": "Maroc"},
+            {"code": "DZ", "name": "Algérie"},
+            {"code": "TN", "name": "Tunisie"},
+            {"code": "EG", "name": "Égypte"},
+            {"code": "FR", "name": "France"},
+            {"code": "BE", "name": "Belgique"},
+            {"code": "US", "name": "États-Unis"},
+            {"code": "CN", "name": "Chine"},
+            {"code": "IN", "name": "Inde"}
+        ]
+        return {"countries": default_countries}
+    
+    return {"countries": countries}
+
+@countries_router.post("", status_code=status.HTTP_201_CREATED)
+async def create_country(
+    country: CountryCreate,
+    current_user: dict = Depends(require_roles(["admin"]))
+):
+    """Create a new country (admin only)"""
+    # Check if code already exists
+    existing = await db.countries.find_one({"code": country.code.upper()})
+    if existing:
+        raise HTTPException(status_code=400, detail="Ce code pays existe déjà")
+    
+    country_doc = {
+        "id": str(uuid.uuid4()),
+        "code": country.code.upper(),
+        "name": country.name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_user["id"]
+    }
+    
+    await db.countries.insert_one(country_doc)
+    country_doc.pop("_id", None)
+    return country_doc
+
+@countries_router.delete("/{country_id}")
+async def delete_country(
+    country_id: str,
+    current_user: dict = Depends(require_roles(["admin"]))
+):
+    """Delete a country (admin only)"""
+    # Check if country is used by employees
+    employees_count = await db.users.count_documents({"country": country_id})
+    if employees_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Impossible de supprimer ce pays, {employees_count} employé(s) y sont associés"
+        )
+    
+    result = await db.countries.delete_one({"id": country_id})
+    if result.deleted_count == 0:
+        # Try to delete by code
+        await db.countries.delete_one({"code": country_id})
+    
+    return {"message": "Pays supprimé"}
+
 # ==================== DOCUMENTS RH ROUTES ====================
 documents_router = APIRouter(prefix="/hr-documents", tags=["Documents RH"])
 
@@ -4037,6 +4133,7 @@ api_router.include_router(upload_router)
 api_router.include_router(notifications_router)
 api_router.include_router(sites_router)
 api_router.include_router(departments_router)
+api_router.include_router(countries_router)
 api_router.include_router(documents_router)
 api_router.include_router(permissions_router)  # Nouveau système de permissions dynamiques
 

@@ -23,6 +23,7 @@ import DepartmentsManagement from './pages/DepartmentsManagement';
 import DocumentsModule from './pages/DocumentsModuleV2';
 import DocumentsRHHistory from './pages/DocumentsRHHistory';
 import NotificationsModule from './pages/NotificationsModule';
+import ConfigurationPage from './pages/ConfigurationPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -122,6 +123,9 @@ function AppRoutes() {
       <Route path="/my-profile" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
       <Route path="/employee/:id" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
       <Route path="/employees/:id" element={<ProtectedRoute><EmployeeProfile /></ProtectedRoute>} />
+      
+      {/* Configuration Route (Admin only) */}
+      <Route path="/configuration" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><ConfigurationPage /></ProtectedRoute>} />
       
       {/* Default Redirect */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

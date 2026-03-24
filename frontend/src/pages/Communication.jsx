@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Megaphone, Plus, Loader2, AlertTriangle, Info, Bell, Trash2, 
-  FileText, Upload, Download, ChevronLeft, ChevronRight, FileUp
+  FileText, Upload, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import axios from '../config/api';
 import { toast } from 'sonner';
@@ -485,7 +485,7 @@ const Communication = () => {
                     )}
                   </div>
                   
-                  {/* Action Buttons */}
+                  {/* Action Buttons - Only Upload and Delete */}
                   <div className="flex items-center gap-2">
                     {/* Upload Button */}
                     {isAdmin() && (
@@ -502,22 +502,12 @@ const Communication = () => {
                             {uploadingReglement ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
-                              <FileUp className="mr-2 h-4 w-4" />
+                              <Upload className="mr-2 h-4 w-4" />
                             )}
-                            {reglement ? (t('comm.replace') || 'Remplacer') : (t('comm.import') || 'Importer')}
+                            {reglement ? (t('comm.replace') || 'Remplacer') : (t('comm.upload') || 'Uploader')}
                           </span>
                         </Button>
                       </label>
-                    )}
-                    
-                    {/* Download Button */}
-                    {reglement && (
-                      <a href={reglement.url} download={reglement.name}>
-                        <Button variant="outline" size="sm">
-                          <Download className="mr-2 h-4 w-4" />
-                          {t('comm.export') || 'Exporter'}
-                        </Button>
-                      </a>
                     )}
                     
                     {/* Delete Button */}
