@@ -15,8 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { ScrollArea } from '../components/ui/scroll-area';
 import { 
   Megaphone, Plus, Loader2, AlertTriangle, Info, Bell, Trash2, 
-  FileText, Upload, Eye, Download, ChevronLeft, ChevronRight,
-  ZoomIn, ZoomOut, Maximize2, X, File
+  FileText, Upload, Eye, Download, Maximize2, X, File
 } from 'lucide-react';
 import axios from '../config/api';
 import { toast } from 'sonner';
@@ -57,7 +56,6 @@ const Communication = () => {
   const [uploadingReglement, setUploadingReglement] = useState(false);
   const [viewingDocument, setViewingDocument] = useState(null);
   const [deleteReglementDialog, setDeleteReglementDialog] = useState({ open: false, id: null });
-  const [pdfScale, setPdfScale] = useState(1);
 
   // Fetch announcements
   useEffect(() => {
@@ -177,7 +175,6 @@ const Communication = () => {
 
   const openDocument = (doc) => {
     setViewingDocument(doc);
-    setPdfScale(1);
   };
 
   const formatFileSize = (bytes) => {
@@ -582,7 +579,7 @@ const Communication = () => {
 
         {/* Full Screen Document Viewer */}
         <Dialog open={!!viewingDocument} onOpenChange={(open) => !open && setViewingDocument(null)}>
-          <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0">
+          <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-[90vh] p-0">
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b bg-muted/50">
@@ -597,17 +594,16 @@ const Communication = () => {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  {/* Zoom Controls */}
-                  <Button variant="outline" size="sm" onClick={() => setPdfScale(s => Math.max(0.5, s - 0.25))}>
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm min-w-[60px] text-center">{Math.round(pdfScale * 100)}%</span>
-                  <Button variant="outline" size="sm" onClick={() => setPdfScale(s => Math.min(2, s + 0.25))}>
-                    <ZoomIn className="h-4 w-4" />
-                  </Button>
+                  {/* Open in new tab */}
+                  <a href={viewingDocument?.url} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm">
+                      <Maximize2 className="h-4 w-4 mr-2" />
+                      {t('comm.openNewTab') || 'Nouvel onglet'}
+                    </Button>
+                  </a>
                   
                   {/* Download */}
-                  <a href={viewingDocument?.url} download={viewingDocument?.name} target="_blank" rel="noopener noreferrer">
+                  <a href={viewingDocument?.url} download={viewingDocument?.name}>
                     <Button variant="outline" size="sm">
                       <Download className="h-4 w-4 mr-2" />
                       {t('comm.download') || 'Télécharger'}
@@ -621,19 +617,30 @@ const Communication = () => {
                 </div>
               </div>
               
-              {/* PDF Viewer */}
-              <div className="flex-1 overflow-auto bg-gray-800 flex items-center justify-center">
+              {/* PDF Viewer using object tag */}
+              <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-900">
                 {viewingDocument && (
-                  <iframe
-                    src={`${viewingDocument.url}#toolbar=0&navpanes=0&scrollbar=1`}
+                  <object
+                    data={viewingDocument.url}
+                    type="application/pdf"
                     className="w-full h-full"
-                    style={{ 
-                      transform: `scale(${pdfScale})`,
-                      transformOrigin: 'top center',
-                      minHeight: '100%'
-                    }}
-                    title={viewingDocument.name}
-                  />
+                  >
+                    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                      <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+                      <p className="text-lg font-medium mb-2">
+                        {t('comm.pdfNotSupported') || 'Impossible d\'afficher le PDF dans le navigateur'}
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {t('comm.downloadInstead') || 'Veuillez télécharger le document pour le consulter'}
+                      </p>
+                      <a href={viewingDocument.url} download={viewingDocument.name}>
+                        <Button>
+                          <Download className="h-4 w-4 mr-2" />
+                          {t('comm.download') || 'Télécharger'}
+                        </Button>
+                      </a>
+                    </div>
+                  </object>
                 )}
               </div>
             </div>
