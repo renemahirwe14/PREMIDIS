@@ -2699,6 +2699,80 @@ async def mark_messages_read(
     )
     return {"marked_read": result.modified_count}
 
+# ==================== RÈGLEMENT INTÉRIEUR ====================
+
+@communication_router.get("/reglement")
+async def get_reglement(current_user: dict = Depends(get_current_user)):
+    """Get all règlement intérieur documents"""
+    documents = await db.reglement_interieur.find({}, {"_id": 0}).sort("uploaded_at", -1).to_list(100)
+    return {"documents": documents}
+
+@communication_router.post("/reglement")
+async def upload_reglement(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(require_roles(["admin", "super_admin"]))
+):
+    """Upload a règlement intérieur document (Admin only)"""
+    allowed_types = ["application/pdf"]
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Seuls les fichiers PDF sont acceptés pour le règlement intérieur"
+        )
+    
+    # Generate unique filename
+    file_id = str(uuid.uuid4())
+    filename = f"reglement_{file_id}.pdf"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    # Save file
+    content = await file.read()
+    with open(filepath, 'wb') as f:
+        f.write(content)
+    
+    # Get file size
+    file_size = len(content)
+    
+    # Save to database
+    document = {
+        "id": file_id,
+        "name": file.filename,
+        "filename": filename,
+        "url": f"/api/uploads/{filename}",
+        "size": file_size,
+        "uploaded_by": current_user["id"],
+        "uploaded_by_name": f"{current_user['first_name']} {current_user['last_name']}",
+        "uploaded_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.reglement_interieur.insert_one(document)
+    document.pop("_id", None)
+    
+    return {"message": "Règlement intérieur uploadé avec succès", "document": document}
+
+@communication_router.delete("/reglement/{document_id}")
+async def delete_reglement(
+    document_id: str,
+    current_user: dict = Depends(require_roles(["admin", "super_admin"]))
+):
+    """Delete a règlement intérieur document (Admin only)"""
+    # Find the document
+    document = await db.reglement_interieur.find_one({"id": document_id})
+    
+    if not document:
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    
+    # Delete the file
+    filepath = os.path.join(UPLOAD_DIR, document["filename"])
+    if os.path.exists(filepath):
+        os.remove(filepath)
+    
+    # Delete from database
+    await db.reglement_interieur.delete_one({"id": document_id})
+    
+    return {"message": "Document supprimé avec succès"}
+
 # ==================== FILE UPLOAD ROUTES ====================
 from fastapi import UploadFile, File
 import base64
@@ -2847,6 +2921,10 @@ from fastapi.staticfiles import StaticFiles
 async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
     stats = {}
     
+    # Common stats for everyone
+    stats["total_announcements"] = await db.announcements.count_documents({})
+    stats["total_reglements"] = await db.reglement_interieur.count_documents({})
+    
     if current_user["role"] in ["admin", "secretary"]:
         stats["total_employees"] = await db.users.count_documents({"is_active": True})
         stats["pending_leaves"] = await db.leaves.count_documents({"status": "pending"})
@@ -2868,6 +2946,13 @@ async def get_dashboard_stats(current_user: dict = Depends(get_current_user)):
         stats["pending_requests"] = await db.leaves.count_documents({
             "employee_id": current_user["id"],
             "status": "pending"
+        })
+        stats["my_leaves_pending"] = await db.leaves.count_documents({
+            "employee_id": current_user["id"],
+            "status": "pending"
+        })
+        stats["behavior_notes"] = await db.behaviors.count_documents({
+            "employee_id": current_user["id"]
         })
     
     return stats

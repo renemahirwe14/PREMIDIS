@@ -44,10 +44,10 @@ const Dashboard = () => {
       description: t('dashboard.commDescription'),
       link: '/communication',
       color: 'primary',
-      metric: stats?.unread_messages || 0,
-      metricLabel: t('dashboard.unread'),
-      badge: stats?.unread_messages > 0 ? t('dashboard.new') : null,
-      badgeVariant: 'destructive'
+      metric: stats?.total_announcements || 0,
+      metricLabel: t('dashboard.announcements'),
+      badge: null,
+      badgeVariant: 'secondary'
     },
     {
       title: t('nav.administration'),
@@ -101,11 +101,11 @@ const Dashboard = () => {
       onClick: () => navigate('/communication?tab=announcements')
     },
     {
-      label: t('dashboard.unreadMessages'),
-      value: stats?.unread_messages || 0,
+      label: t('dashboard.reglement') || 'Règlement',
+      value: stats?.total_reglements || 0,
       icon: MessageSquare,
-      color: 'border-l-destructive',
-      onClick: () => navigate('/communication?tab=chat')
+      color: 'border-l-violet-500',
+      onClick: () => navigate('/communication?tab=reglement')
     }
   ];
 
@@ -187,13 +187,13 @@ const Dashboard = () => {
 
             <Card 
               className="border-l-4 border-l-accent cursor-pointer hover:shadow-lg transition-all"
-              onClick={() => navigate('/communication?tab=chat')}
+              onClick={() => navigate('/communication?tab=reglement')}
             >
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">{t('dashboard.unreadMessages')}</p>
-                    <p className="text-2xl font-bold">{stats?.unread_messages || 0}</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.reglement') || 'Règlement'}</p>
+                    <p className="text-2xl font-bold">{stats?.total_reglements || 0}</p>
                   </div>
                   <MessageSquare className="h-8 w-8 text-accent/50" />
                 </div>
