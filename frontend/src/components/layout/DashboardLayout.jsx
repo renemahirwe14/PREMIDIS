@@ -52,7 +52,6 @@ const DashboardLayout = ({ children }) => {
     { path: '/documents', icon: FileText, labelKey: 'nav.documents' },
     { path: '/sites', icon: Building2, labelKey: 'nav.sites', adminOnly: true },
     { path: '/permissions', icon: Shield, labelKey: 'nav.permissions', adminOnly: true },
-    { path: '/configuration', icon: Settings, labelKey: 'nav.configuration', adminOnly: true },
     { path: '/my-profile', icon: User, labelKey: 'nav.myProfile', employeeOnly: true },
   ];
 

@@ -722,6 +722,8 @@
   "config.subtitle": "Manage countries and departments for the company",
   "config.countries": "Countries",
   "config.departments": "Departments",
+  "config.manageCountries": "Manage Countries",
+  "config.manageDepts": "Manage Departments",
   "config.countriesManagement": "Countries Management",
   "config.countriesDesc": "Add or remove countries available when creating employees",
   "config.deptsManagement": "Departments Management",

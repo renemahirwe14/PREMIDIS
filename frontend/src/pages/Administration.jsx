@@ -9,7 +9,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../components/ui/dialog';
+import { ScrollArea } from '../components/ui/scroll-area';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { 
   Users, Plus, Search, Filter, Loader2, Mail, Phone, 
-  Building2, Calendar, Briefcase, Edit, Trash2, Eye, Download, Upload
+  Building2, Calendar, Briefcase, Edit, Trash2, Eye, Download, Upload,
+  Globe, Settings, Check
 } from 'lucide-react';
 import axios from '../config/api';
 import { toast } from 'sonner';
@@ -44,6 +46,26 @@ const Administration = () => {
   // Delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, permanent: false });
 
+  // Countries and Departments from API
+  const [countries, setCountries] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  
+  // Countries management
+  const [countryDialogOpen, setCountryDialogOpen] = useState(false);
+  const [countrySubmitting, setCountrySubmitting] = useState(false);
+  const [deleteCountryDialog, setDeleteCountryDialog] = useState({ open: false, country: null });
+  const [newCountry, setNewCountry] = useState({ code: '', name: '' });
+  
+  // Departments management
+  const [deptDialogOpen, setDeptDialogOpen] = useState(false);
+  const [deptSubmitting, setDeptSubmitting] = useState(false);
+  const [deleteDeptDialog, setDeleteDeptDialog] = useState({ open: false, dept: null });
+  const [newDept, setNewDept] = useState({ code: '', name: '', description: '' });
+  
+  // Management panels
+  const [showCountriesPanel, setShowCountriesPanel] = useState(false);
+  const [showDeptsPanel, setShowDeptsPanel] = useState(false);
+
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -57,37 +79,20 @@ const Administration = () => {
     salary_currency: 'USD',
     role: 'employee',
     category: 'agent',
-    country: 'RDC',
+    country: 'CD',
     site_id: '',
     hierarchy_level: 'employe'
   });
-
-  const departments = [
-    { value: 'marketing', label: t('departments.marketing') },
-    { value: 'comptabilite', label: t('departments.comptabilite') },
-    { value: 'administration', label: t('departments.administration') },
-    { value: 'ressources_humaines', label: t('departments.ressources_humaines') },
-    { value: 'juridique', label: t('departments.juridique') },
-    { value: 'nettoyage', label: t('departments.nettoyage') },
-    { value: 'securite', label: t('departments.securite') },
-    { value: 'chauffeur', label: t('departments.chauffeur') },
-    { value: 'technicien', label: t('departments.technicien') },
-    { value: 'direction', label: t('departments.direction') },
-    { value: 'logistique', label: t('departments.logistique') },
-    { value: 'production', label: t('departments.production') },
-    { value: 'commercial', label: t('departments.commercial') },
-    { value: 'informatique', label: t('departments.informatique') }
-  ];
 
   const hierarchyLevels = [
     { value: 'employe', label: t('admin.simpleEmployee') },
     { value: 'chef_departement', label: t('admin.deptHead') }
   ];
 
-  const countries = ['RDC', 'Congo', 'Rwanda', 'Burundi', 'Uganda', 'Kenya', 'Tanzanie', 'Cameroun'];
-
   useEffect(() => {
     fetchData();
+    fetchCountries();
+    fetchDepartments();
   }, [filterDepartment, filterSite, filterHierarchy]);
 
   const fetchData = async () => {
@@ -102,6 +107,94 @@ const Administration = () => {
       toast.error(t('admin.loadError'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const response = await axios.get('/api/countries');
+      setCountries(response.data.countries || []);
+    } catch (error) {
+      console.error('Failed to fetch countries:', error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get('/api/departments');
+      setDepartments(response.data.departments || []);
+    } catch (error) {
+      console.error('Failed to fetch departments:', error);
+    }
+  };
+
+  // Country handlers
+  const handleAddCountry = async () => {
+    if (!newCountry.code.trim() || !newCountry.name.trim()) {
+      toast.error(t('config.fillAllFields') || 'Veuillez remplir tous les champs');
+      return;
+    }
+    
+    setCountrySubmitting(true);
+    try {
+      await axios.post('/api/countries', newCountry);
+      await fetchCountries();
+      setCountryDialogOpen(false);
+      setNewCountry({ code: '', name: '' });
+      toast.success(t('config.countryAdded') || 'Pays ajouté avec succès');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t('config.addError') || 'Erreur');
+    } finally {
+      setCountrySubmitting(false);
+    }
+  };
+
+  const handleDeleteCountry = async () => {
+    if (!deleteCountryDialog.country) return;
+    
+    try {
+      const countryId = deleteCountryDialog.country.id || deleteCountryDialog.country.code;
+      await axios.delete(`/api/countries/${countryId}`);
+      await fetchCountries();
+      setDeleteCountryDialog({ open: false, country: null });
+      toast.success(t('config.countryDeleted') || 'Pays supprimé');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t('config.deleteError') || 'Erreur');
+    }
+  };
+
+  // Department handlers
+  const handleAddDepartment = async () => {
+    if (!newDept.code.trim() || !newDept.name.trim()) {
+      toast.error(t('config.fillAllFields') || 'Veuillez remplir tous les champs');
+      return;
+    }
+    
+    setDeptSubmitting(true);
+    try {
+      await axios.post('/api/departments', newDept);
+      await fetchDepartments();
+      setDeptDialogOpen(false);
+      setNewDept({ code: '', name: '', description: '' });
+      toast.success(t('config.deptAdded') || 'Département ajouté avec succès');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t('config.addError') || 'Erreur');
+    } finally {
+      setDeptSubmitting(false);
+    }
+  };
+
+  const handleDeleteDepartment = async () => {
+    if (!deleteDeptDialog.dept) return;
+    
+    try {
+      const deptId = deleteDeptDialog.dept.id || deleteDeptDialog.dept.code;
+      await axios.delete(`/api/departments/${deptId}`);
+      await fetchDepartments();
+      setDeleteDeptDialog({ open: false, dept: null });
+      toast.success(t('config.deptDeleted') || 'Département supprimé');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t('config.deleteError') || 'Erreur');
     }
   };
 
@@ -309,7 +402,7 @@ const Administration = () => {
           </div>
           
           {canEdit() && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {/* Hidden file input for import */}
               <input
                 type="file"
@@ -318,6 +411,21 @@ const Administration = () => {
                 onChange={handleImport}
                 className="hidden"
               />
+              
+              {/* Configuration buttons */}
+              {isAdmin() && (
+                <>
+                  <Button variant="outline" onClick={() => setShowCountriesPanel(true)} data-testid="manage-countries-btn">
+                    <Globe className="mr-2 h-4 w-4" />
+                    {t('config.manageCountries') || 'Gérer les pays'}
+                  </Button>
+                  
+                  <Button variant="outline" onClick={() => setShowDeptsPanel(true)} data-testid="manage-depts-btn">
+                    <Settings className="mr-2 h-4 w-4" />
+                    {t('config.manageDepts') || 'Gérer les départements'}
+                  </Button>
+                </>
+              )}
               
               <Button variant="outline" onClick={() => fileInputRef.current?.click()} data-testid="import-btn">
                 <Upload className="mr-2 h-4 w-4" />
@@ -501,7 +609,9 @@ const Administration = () => {
                         </SelectTrigger>
                         <SelectContent>
                           {countries.map((country) => (
-                            <SelectItem key={country} value={country}>{country}</SelectItem>
+                            <SelectItem key={country.code || country} value={country.code || country}>
+                              {country.name || country}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -710,6 +820,210 @@ const Administration = () => {
                 {deleteDialog.permanent ? t('common.delete') : t('admin.deactivate')}
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Countries Management Panel */}
+        <Dialog open={showCountriesPanel} onOpenChange={setShowCountriesPanel}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                {t('config.manageCountries') || 'Gérer les pays'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Add Country Form */}
+              <Card className="bg-muted/30">
+                <CardContent className="pt-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={t('config.countryCode') || 'Code (ex: CD)'}
+                      value={newCountry.code}
+                      onChange={(e) => setNewCountry({ ...newCountry, code: e.target.value.toUpperCase() })}
+                      maxLength={3}
+                      className="w-24"
+                    />
+                    <Input
+                      placeholder={t('config.countryName') || 'Nom du pays'}
+                      value={newCountry.name}
+                      onChange={(e) => setNewCountry({ ...newCountry, name: e.target.value })}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleAddCountry} disabled={countrySubmitting}>
+                      {countrySubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Countries List */}
+              <ScrollArea className="h-[300px] border rounded-lg">
+                <div className="p-4 space-y-2">
+                  {countries.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      {t('config.noCountries') || 'Aucun pays configuré'}
+                    </p>
+                  ) : (
+                    countries.map((country) => (
+                      <div key={country.code || country} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Globe className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium">{country.name || country}</p>
+                            {country.code && <p className="text-xs text-muted-foreground">{country.code}</p>}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteCountryDialog({ open: true, country })}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Departments Management Panel */}
+        <Dialog open={showDeptsPanel} onOpenChange={setShowDeptsPanel}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                {t('config.manageDepts') || 'Gérer les départements'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Add Department Form */}
+              <Card className="bg-muted/30">
+                <CardContent className="pt-4 space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={t('config.deptCode') || 'Code (ex: RH)'}
+                      value={newDept.code}
+                      onChange={(e) => setNewDept({ ...newDept, code: e.target.value.toLowerCase() })}
+                      className="w-32"
+                    />
+                    <Input
+                      placeholder={t('config.deptName') || 'Nom du département'}
+                      value={newDept.name}
+                      onChange={(e) => setNewDept({ ...newDept, name: e.target.value })}
+                      className="flex-1"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={t('config.deptDesc') || 'Description (optionnel)'}
+                      value={newDept.description}
+                      onChange={(e) => setNewDept({ ...newDept, description: e.target.value })}
+                      className="flex-1"
+                    />
+                    <Button onClick={handleAddDepartment} disabled={deptSubmitting}>
+                      {deptSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Departments List */}
+              <ScrollArea className="h-[300px] border rounded-lg">
+                <div className="p-4 space-y-2">
+                  {departments.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      {t('config.noDepts') || 'Aucun département configuré'}
+                    </p>
+                  ) : (
+                    departments.map((dept) => (
+                      <div key={dept.value || dept.code} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3 flex-1">
+                          <Briefcase className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex-1">
+                            <p className="font-medium">{dept.label || dept.name}</p>
+                            {dept.description && <p className="text-xs text-muted-foreground">{dept.description}</p>}
+                            <p className="text-xs text-muted-foreground/70">{dept.value || dept.code}</p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteDeptDialog({ open: true, dept })}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Country Confirmation */}
+        <Dialog open={deleteCountryDialog.open} onOpenChange={(open) => !open && setDeleteCountryDialog({ open: false, country: null })}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="h-5 w-5" />
+                {t('config.deleteCountry') || 'Supprimer le pays'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-muted-foreground">
+                {t('config.deleteCountryConfirm') || 'Voulez-vous vraiment supprimer ce pays ? Les employés associés devront être modifiés.'}
+              </p>
+              {deleteCountryDialog.country && (
+                <p className="font-medium mt-2">{deleteCountryDialog.country.name || deleteCountryDialog.country}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteCountryDialog({ open: false, country: null })}>
+                {t('common.cancel')}
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteCountry}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t('common.delete')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Department Confirmation */}
+        <Dialog open={deleteDeptDialog.open} onOpenChange={(open) => !open && setDeleteDeptDialog({ open: false, dept: null })}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="h-5 w-5" />
+                {t('config.deleteDept') || 'Supprimer le département'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-muted-foreground">
+                {t('config.deleteDeptConfirm') || 'Voulez-vous vraiment supprimer ce département ? Les employés associés devront être modifiés.'}
+              </p>
+              {deleteDeptDialog.dept && (
+                <p className="font-medium mt-2">{deleteDeptDialog.dept.label || deleteDeptDialog.dept.name}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDeptDialog({ open: false, dept: null })}>
+                {t('common.cancel')}
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteDepartment}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {t('common.delete')}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
