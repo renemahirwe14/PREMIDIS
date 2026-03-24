@@ -113,7 +113,15 @@ const Administration = () => {
   const fetchCountries = async () => {
     try {
       const response = await axios.get('/api/countries');
-      setCountries(response.data.countries || []);
+      const countriesData = response.data.countries || [];
+      // Support both string format and object format {code, name}
+      const transformedCountries = countriesData.map(country => {
+        if (typeof country === 'string') {
+          return { code: country, name: country };
+        }
+        return country;
+      });
+      setCountries(transformedCountries);
     } catch (error) {
       console.error('Failed to fetch countries:', error);
     }
@@ -122,7 +130,16 @@ const Administration = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get('/api/departments');
-      setDepartments(response.data.departments || []);
+      const depts = response.data.departments || [];
+      // Transform to {value, label} format for dropdown
+      const transformedDepts = depts.map(dept => ({
+        value: dept.code,
+        label: dept.name,
+        code: dept.code,
+        name: dept.name,
+        description: dept.description
+      }));
+      setDepartments(transformedDepts);
     } catch (error) {
       console.error('Failed to fetch departments:', error);
     }
