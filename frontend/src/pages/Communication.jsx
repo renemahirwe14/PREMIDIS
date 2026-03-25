@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   Megaphone, Plus, Loader2, AlertTriangle, Info, Bell, Trash2, 
-  FileText, Upload, ChevronLeft, ChevronRight
+  FileText, Upload, ChevronLeft, ChevronRight, Download, Image, File, ZoomIn, ZoomOut, RotateCw
 } from 'lucide-react';
 import axios from '../config/api';
 import { toast } from 'sonner';
@@ -55,10 +55,9 @@ const Communication = () => {
   const [uploadingReglement, setUploadingReglement] = useState(false);
   const [deleteReglementDialog, setDeleteReglementDialog] = useState(false);
   
-  // PDF viewer state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [pdfKey, setPdfKey] = useState(0);
+  // Document viewer state
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [imageRotation, setImageRotation] = useState(0);
   const containerRef = useRef(null);
 
   // Fetch announcements
@@ -91,7 +90,8 @@ const Communication = () => {
       const documents = response.data.documents || [];
       // Get the most recent document (only one should exist)
       setReglement(documents.length > 0 ? documents[0] : null);
-      setCurrentPage(1);
+      setZoomLevel(100);
+      setImageRotation(0);
     } catch (error) {
       console.error('Failed to fetch reglement:', error);
     } finally {
@@ -138,8 +138,15 @@ const Communication = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (file.type !== 'application/pdf') {
-      toast.error(t('comm.pdfOnly') || 'Seuls les fichiers PDF sont acceptés');
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(t('comm.fileTypeError') || 'Types acceptés : PDF, images (JPG, PNG, GIF, WebP), DOC/DOCX');
       return;
     }
     
@@ -158,10 +165,10 @@ const Communication = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      toast.success(t('comm.reglementUploaded') || 'Règlement uploadé avec succès');
+      toast.success(t('comm.reglementUploaded') || 'Document uploadé avec succès');
       setReglement(response.data.document);
-      setCurrentPage(1);
-      setPdfKey(prev => prev + 1); // Force re-render of PDF viewer
+      setZoomLevel(100);
+      setImageRotation(0);
     } catch (error) {
       toast.error(error.response?.data?.detail || t('comm.uploadError') || 'Erreur lors de l\'upload');
     } finally {
@@ -178,56 +185,37 @@ const Communication = () => {
       toast.success(t('comm.reglementDeleted') || 'Document supprimé');
       setReglement(null);
       setDeleteReglementDialog(false);
-      setCurrentPage(1);
-      setTotalPages(1);
+      setZoomLevel(100);
+      setImageRotation(0);
     } catch (error) {
       toast.error(error.response?.data?.detail || t('comm.deleteError'));
     }
   };
 
-  // Page navigation
-  const goToPage = useCallback((page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  }, [totalPages]);
+  // Zoom controls
+  const zoomIn = () => setZoomLevel(prev => Math.min(prev + 25, 200));
+  const zoomOut = () => setZoomLevel(prev => Math.max(prev - 25, 50));
+  const rotateImage = () => setImageRotation(prev => (prev + 90) % 360);
 
-  const nextPage = () => goToPage(currentPage + 1);
-  const prevPage = () => goToPage(currentPage - 1);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (activeTab !== 'reglement' || !reglement) return;
-      
-      if (e.key === 'ArrowLeft') {
-        prevPage();
-      } else if (e.key === 'ArrowRight') {
-        nextPage();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, reglement, currentPage, totalPages]);
-
-  // Touch/Swipe handling
-  const touchStartX = useRef(0);
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
+  // Helper to get file type from document
+  const getFileType = (doc) => {
+    if (doc.file_type) return doc.file_type;
+    // Fallback: detect from filename/url
+    const url = (doc.url || doc.filename || '').toLowerCase();
+    if (url.endsWith('.pdf')) return 'pdf';
+    if (url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/)) return 'image';
+    if (url.match(/\.(doc|docx)$/)) return 'document';
+    return 'pdf'; // default
   };
-  
-  const handleTouchEnd = (e) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
-    
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        nextPage();
-      } else {
-        prevPage();
-      }
-    }
+
+  // Build absolute URL for document
+  const getDocumentUrl = (doc) => {
+    if (!doc || !doc.url) return '';
+    // If already absolute, use as-is
+    if (doc.url.startsWith('http')) return doc.url;
+    // Build absolute URL from backend base
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+    return `${backendUrl}${doc.url}`;
   };
 
   const getPriorityConfig = (priority) => {
@@ -467,7 +455,7 @@ const Communication = () => {
             </Card>
           </TabsContent>
 
-          {/* Règlement Tab - Direct PDF Viewer */}
+          {/* Règlement Tab - Document Viewer (PDF, Image, DOC) */}
           <TabsContent value="reglement" className="mt-6">
             <Card className="overflow-hidden">
               {/* Header with actions */}
@@ -485,14 +473,14 @@ const Communication = () => {
                     )}
                   </div>
                   
-                  {/* Action Buttons - Only Upload and Delete */}
+                  {/* Action Buttons */}
                   <div className="flex items-center gap-2">
                     {/* Upload Button */}
                     {isAdmin() && (
                       <label className="cursor-pointer">
                         <input
                           type="file"
-                          accept=".pdf,application/pdf"
+                          accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.doc,.docx"
                           onChange={handleReglementUpload}
                           className="hidden"
                           disabled={uploadingReglement}
@@ -508,6 +496,16 @@ const Communication = () => {
                           </span>
                         </Button>
                       </label>
+                    )}
+                    
+                    {/* Download Button */}
+                    {reglement && (
+                      <a href={getDocumentUrl(reglement)} download={reglement.name} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" />
+                          {t('comm.download') || 'Télécharger'}
+                        </Button>
+                      </a>
                     )}
                     
                     {/* Delete Button */}
@@ -528,7 +526,7 @@ const Communication = () => {
               {/* Document Viewer */}
               <CardContent className="p-0">
                 {reglementLoading ? (
-                  <div className="flex items-center justify-center h-[600px] bg-gray-50 dark:bg-gray-900">
+                  <div className="flex items-center justify-center h-[700px] bg-gray-50 dark:bg-gray-900">
                     <Loader2 className="h-12 w-12 animate-spin text-primary" />
                   </div>
                 ) : !reglement ? (
@@ -541,11 +539,14 @@ const Communication = () => {
                     <p className="text-sm text-muted-foreground mb-6">
                       {t('comm.noReglementDesc') || 'Le règlement intérieur n\'a pas encore été uploadé'}
                     </p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      {t('comm.acceptedFormats') || 'Formats acceptés : PDF, Images (JPG, PNG, GIF, WebP), DOC/DOCX'}
+                    </p>
                     {isAdmin() && (
                       <label className="cursor-pointer">
                         <input
                           type="file"
-                          accept=".pdf,application/pdf"
+                          accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.svg,.doc,.docx"
                           onChange={handleReglementUpload}
                           className="hidden"
                           disabled={uploadingReglement}
@@ -564,79 +565,81 @@ const Communication = () => {
                     )}
                   </div>
                 ) : (
-                  /* PDF Viewer */
-                  <div 
-                    ref={containerRef}
-                    className="relative bg-gray-800"
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}
-                  >
-                    {/* PDF Display */}
-                    <div className="h-[600px] w-full">
-                      <object
-                        key={pdfKey}
-                        data={`${reglement.url}#page=${currentPage}&toolbar=0&navpanes=0`}
-                        type="application/pdf"
-                        className="w-full h-full"
-                      >
-                        <div className="flex flex-col items-center justify-center h-full bg-gray-100 dark:bg-gray-900 p-8 text-center">
-                          <FileText className="h-16 w-16 text-muted-foreground mb-4" />
-                          <p className="text-lg font-medium mb-2">
-                            {t('comm.pdfNotSupported') || 'Impossible d\'afficher le PDF'}
-                          </p>
-                          <a href={reglement.url} download={reglement.name}>
-                            <Button>
-                              <Download className="h-4 w-4 mr-2" />
+                  /* Document Viewer - adapts based on file type */
+                  <div ref={containerRef} className="relative">
+                    {getFileType(reglement) === 'pdf' ? (
+                      /* PDF Viewer using iframe */
+                      <div className="bg-gray-800">
+                        <iframe
+                          src={`${getDocumentUrl(reglement)}#toolbar=1&navpanes=1&scrollbar=1`}
+                          title={reglement.name || 'Règlement'}
+                          className="w-full border-0"
+                          style={{ height: '700px' }}
+                        />
+                      </div>
+                    ) : getFileType(reglement) === 'image' ? (
+                      /* Image Viewer with zoom and rotate */
+                      <div className="bg-gray-100 dark:bg-gray-900 flex flex-col">
+                        {/* Image Toolbar */}
+                        <div className="flex items-center justify-center gap-2 py-3 px-4 bg-muted/50 border-b">
+                          <Button variant="outline" size="sm" onClick={zoomOut} disabled={zoomLevel <= 50}>
+                            <ZoomOut className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm font-medium min-w-[50px] text-center">{zoomLevel}%</span>
+                          <Button variant="outline" size="sm" onClick={zoomIn} disabled={zoomLevel >= 200}>
+                            <ZoomIn className="h-4 w-4" />
+                          </Button>
+                          <div className="w-px h-5 bg-border mx-2" />
+                          <Button variant="outline" size="sm" onClick={rotateImage}>
+                            <RotateCw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {/* Image Display */}
+                        <div className="overflow-auto flex items-center justify-center" style={{ height: '650px' }}>
+                          <img
+                            src={getDocumentUrl(reglement)}
+                            alt={reglement.name || 'Règlement'}
+                            className="max-w-full transition-transform duration-300 ease-in-out"
+                            style={{ 
+                              transform: `scale(${zoomLevel / 100}) rotate(${imageRotation}deg)`,
+                              transformOrigin: 'center center'
+                            }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling && (e.target.nextSibling.style.display = 'flex');
+                            }}
+                          />
+                          <div className="hidden flex-col items-center justify-center text-center p-8">
+                            <Image className="h-16 w-16 text-muted-foreground mb-4" />
+                            <p className="text-lg font-medium mb-2">
+                              {t('comm.imageError') || 'Impossible de charger l\'image'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* DOC/DOCX Viewer - Google Docs Viewer fallback + download */
+                      <div className="bg-gray-100 dark:bg-gray-900">
+                        <iframe
+                          src={`https://docs.google.com/gview?url=${encodeURIComponent(getDocumentUrl(reglement))}&embedded=true`}
+                          title={reglement.name || 'Document'}
+                          className="w-full border-0"
+                          style={{ height: '700px' }}
+                          onError={() => console.log('Google Docs viewer failed')}
+                        />
+                        {/* Fallback message below iframe */}
+                        <div className="flex items-center justify-center gap-3 py-3 px-4 bg-muted/50 border-t text-sm text-muted-foreground">
+                          <File className="h-4 w-4" />
+                          <span>{t('comm.docViewerHint') || 'Si le document ne s\'affiche pas, vous pouvez le télécharger :'}</span>
+                          <a href={getDocumentUrl(reglement)} download={reglement.name}>
+                            <Button variant="outline" size="sm">
+                              <Download className="mr-2 h-4 w-4" />
                               {t('comm.download') || 'Télécharger'}
                             </Button>
                           </a>
                         </div>
-                      </object>
-                    </div>
-                    
-                    {/* Navigation Controls - Floating at bottom */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/70 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={prevPage}
-                        disabled={currentPage <= 1}
-                        className="text-white hover:text-white hover:bg-white/20 rounded-full h-8 w-8 p-0"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </Button>
-                      
-                      <div className="flex items-center gap-2 px-3">
-                        <span className="text-white text-sm font-medium">Page</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={totalPages}
-                          value={currentPage}
-                          onChange={(e) => {
-                            const page = parseInt(e.target.value);
-                            if (!isNaN(page)) goToPage(page);
-                          }}
-                          className="w-12 text-center bg-white/20 border-0 rounded text-white text-sm py-1"
-                        />
-                        <span className="text-white text-sm">/ {totalPages}</span>
                       </div>
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={nextPage}
-                        disabled={currentPage >= totalPages}
-                        className="text-white hover:text-white hover:bg-white/20 rounded-full h-8 w-8 p-0"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    
-                    {/* Instructions */}
-                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 text-xs text-white/80">
-                      ← → {t('comm.navHint') || 'ou swipe pour naviguer'}
-                    </div>
+                    )}
                   </div>
                 )}
               </CardContent>

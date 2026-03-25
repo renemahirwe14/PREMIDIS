@@ -2712,18 +2712,44 @@ async def upload_reglement(
     file: UploadFile = File(...),
     current_user: dict = Depends(require_roles(["admin", "super_admin"]))
 ):
-    """Upload a règlement intérieur document (Admin only)"""
-    allowed_types = ["application/pdf"]
+    """Upload a règlement intérieur document (Admin only) - PDF, images, DOC/DOCX"""
+    allowed_types = [
+        "application/pdf",
+        "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ]
     
     if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=400,
-            detail="Seuls les fichiers PDF sont acceptés pour le règlement intérieur"
+            detail="Types acceptés : PDF, images (JPG, PNG, GIF, WebP), DOC/DOCX"
         )
+    
+    # Determine file extension from content type
+    ext_map = {
+        "application/pdf": ".pdf",
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/gif": ".gif",
+        "image/webp": ".webp",
+        "image/svg+xml": ".svg",
+        "application/msword": ".doc",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx"
+    }
+    ext = ext_map.get(file.content_type, os.path.splitext(file.filename)[1] or ".bin")
+    
+    # Determine file category for the viewer
+    if file.content_type == "application/pdf":
+        file_type = "pdf"
+    elif file.content_type.startswith("image/"):
+        file_type = "image"
+    else:
+        file_type = "document"
     
     # Generate unique filename
     file_id = str(uuid.uuid4())
-    filename = f"reglement_{file_id}.pdf"
+    filename = f"reglement_{file_id}{ext}"
     filepath = os.path.join(UPLOAD_DIR, filename)
     
     # Save file
@@ -2740,6 +2766,8 @@ async def upload_reglement(
         "name": file.filename,
         "filename": filename,
         "url": f"/api/uploads/{filename}",
+        "content_type": file.content_type,
+        "file_type": file_type,
         "size": file_size,
         "uploaded_by": current_user["id"],
         "uploaded_by_name": f"{current_user['first_name']} {current_user['last_name']}",
@@ -2749,7 +2777,7 @@ async def upload_reglement(
     await db.reglement_interieur.insert_one(document)
     document.pop("_id", None)
     
-    return {"message": "Règlement intérieur uploadé avec succès", "document": document}
+    return {"message": "Document uploadé avec succès", "document": document}
 
 @communication_router.delete("/reglement/{document_id}")
 async def delete_reglement(
