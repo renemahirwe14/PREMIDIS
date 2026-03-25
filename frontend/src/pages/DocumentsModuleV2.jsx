@@ -280,13 +280,12 @@ const DocumentsModuleV2 = () => {
             {/* Quick access to Document Editor */}
             <div className="px-6 pb-4">
               <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-dashed border-primary/50 text-primary hover:bg-primary/5"
+                size="lg"
+                className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-md"
                 onClick={() => navigate('/document-editor')}
               >
-                <Eye className="h-4 w-4 mr-2" />
-                {t('docs.openEditor') || 'Ouvrir l\'éditeur visuel (PDF/Image)'}
+                <Eye className="h-5 w-5 mr-2" />
+                Éditeur Visuel de Documents (PDF / Image / Word)
               </Button>
             </div>
             <CardContent>
