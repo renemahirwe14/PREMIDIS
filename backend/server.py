@@ -4215,6 +4215,255 @@ async def delete_form(
     await db.document_forms.delete_one({"id": form_id})
     return {"message": "Forme supprimée"}
 
+# ========== EDITOR DOCUMENTS (must be before generic /{document_id} routes) ==========
+@documents_module_router.post("/upload-file")
+async def upload_document_file(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a PDF, DOCX, or image file for editing with overlay"""
+    allowed_types = {
+        "application/pdf": "pdf",
+        "image/jpeg": "image", "image/png": "image", "image/gif": "image", "image/webp": "image",
+        "application/msword": "docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx"
+    }
+    
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Types acceptés: PDF, images (JPG, PNG, GIF, WebP), DOC/DOCX")
+    
+    file_type = allowed_types[file.content_type]
+    content = await file.read()
+    file_id = str(uuid.uuid4())
+    ext = os.path.splitext(file.filename)[1] or ".bin"
+    filename = f"doc_{file_id}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    
+    with open(filepath, 'wb') as f:
+        f.write(content)
+    
+    # Convert PDF pages to images for overlay editing
+    pages = []
+    if file_type == "pdf":
+        try:
+            pdf_doc = fitz.open(stream=content, filetype="pdf")
+            for i, page in enumerate(pdf_doc):
+                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                img_filename = f"doc_{file_id}_page_{i}.png"
+                img_path = os.path.join(UPLOAD_DIR, img_filename)
+                pix.save(img_path)
+                pages.append({
+                    "page_number": i + 1,
+                    "image_url": f"/api/uploads/{img_filename}",
+                    "width": pix.width,
+                    "height": pix.height
+                })
+            pdf_doc.close()
+        except Exception as e:
+            logging.error(f"PDF conversion error: {e}")
+            pages = [{"page_number": 1, "image_url": f"/api/uploads/{filename}", "width": 800, "height": 1100}]
+    elif file_type == "image":
+        from PIL import Image as PILImage
+        img = PILImage.open(io.BytesIO(content))
+        w, h = img.size
+        pages = [{"page_number": 1, "image_url": f"/api/uploads/{filename}", "width": w, "height": h}]
+    elif file_type == "docx":
+        try:
+            result = mammoth.convert_to_html(io.BytesIO(content))
+            html_content = result.value
+        except Exception:
+            html_content = "<p>Impossible de convertir ce document</p>"
+        pages = [{"page_number": 1, "html_content": html_content, "width": 800, "height": 1100}]
+    
+    doc_record = {
+        "id": file_id,
+        "name": file.filename,
+        "filename": filename,
+        "file_url": f"/api/uploads/{filename}",
+        "file_type": file_type,
+        "content_type": file.content_type,
+        "size": len(content),
+        "pages": pages,
+        "page_count": len(pages),
+        "overlay_elements": [],
+        "author_id": current_user["id"],
+        "author_name": f"{current_user['first_name']} {current_user['last_name']}",
+        "status": "draft",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "history": []
+    }
+    
+    await db.editor_documents.insert_one(doc_record)
+    doc_record.pop("_id", None)
+    return {"message": "Document uploadé", "document": doc_record}
+
+@documents_module_router.get("/editor-docs")
+async def list_editor_documents(current_user: dict = Depends(get_current_user)):
+    """List all uploaded documents for the editor"""
+    query = {}
+    if current_user["role"] not in ["super_admin", "admin"]:
+        query["author_id"] = current_user["id"]
+    docs = await db.editor_documents.find(query, {"_id": 0}).sort("updated_at", -1).to_list(100)
+    return {"documents": docs}
+
+@documents_module_router.get("/editor-docs/{doc_id}")
+async def get_editor_document(doc_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific editor document with overlay data"""
+    doc = await db.editor_documents.find_one({"id": doc_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    return doc
+
+@documents_module_router.put("/editor-docs/{doc_id}/overlay")
+async def save_overlay(doc_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Save overlay elements for a document"""
+    doc = await db.editor_documents.find_one({"id": doc_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    
+    history_entry = {
+        "id": str(uuid.uuid4()),
+        "overlay_elements": doc.get("overlay_elements", []),
+        "saved_by": current_user["id"],
+        "saved_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.editor_documents.update_one(
+        {"id": doc_id},
+        {
+            "$set": {
+                "overlay_elements": data.get("elements", []),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            },
+            "$push": {"history": history_entry}
+        }
+    )
+    return {"message": "Overlay sauvegardé"}
+
+@documents_module_router.delete("/editor-docs/{doc_id}")
+async def delete_editor_document(doc_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete an editor document"""
+    doc = await db.editor_documents.find_one({"id": doc_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    
+    try:
+        filepath = os.path.join(UPLOAD_DIR, doc.get("filename", ""))
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        for page in doc.get("pages", []):
+            img_url = page.get("image_url", "")
+            if img_url:
+                img_path = os.path.join(UPLOAD_DIR, img_url.split("/")[-1])
+                if os.path.exists(img_path):
+                    os.remove(img_path)
+    except Exception:
+        pass
+    
+    await db.editor_documents.delete_one({"id": doc_id})
+    return {"message": "Document supprimé"}
+
+@documents_module_router.get("/editor-docs/{doc_id}/history")
+async def get_editor_history(doc_id: str, current_user: dict = Depends(get_current_user)):
+    """Get version history for a document"""
+    doc = await db.editor_documents.find_one({"id": doc_id}, {"_id": 0, "history": 1, "id": 1, "name": 1})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    return {"history": doc.get("history", []), "document_name": doc.get("name")}
+
+@documents_module_router.post("/editor-docs/{doc_id}/generate-pdf")
+async def generate_pdf_with_overlay(doc_id: str, data: dict, current_user: dict = Depends(get_current_user)):
+    """Generate a final PDF with overlay elements applied on the original document"""
+    doc = await db.editor_documents.find_one({"id": doc_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document non trouvé")
+    
+    elements = data.get("elements", doc.get("overlay_elements", []))
+    
+    try:
+        original_path = os.path.join(UPLOAD_DIR, doc.get("filename", ""))
+        output_id = str(uuid.uuid4())
+        output_filename = f"generated_{output_id}.pdf"
+        output_path = os.path.join(UPLOAD_DIR, output_filename)
+        
+        if doc.get("file_type") == "pdf" and os.path.exists(original_path):
+            pdf_doc = fitz.open(original_path)
+            
+            for elem in elements:
+                page_idx = elem.get("page", 1) - 1
+                if page_idx < 0 or page_idx >= len(pdf_doc):
+                    continue
+                page = pdf_doc[page_idx]
+                
+                scale = 0.5
+                x = elem.get("x", 0) * scale
+                y = elem.get("y", 0) * scale
+                
+                if elem.get("type") == "text":
+                    text = elem.get("content", "")
+                    font_size = elem.get("fontSize", 14) * scale
+                    color_hex = elem.get("color", "#000000").lstrip("#")
+                    r, g, b = tuple(int(color_hex[i:i+2], 16) / 255 for i in (0, 2, 4))
+                    page.insert_text(fitz.Point(x, y + font_size), text, fontsize=font_size, color=(r, g, b))
+                elif elem.get("type") == "checkbox":
+                    checked = elem.get("checked", False)
+                    symbol = "☑" if checked else "☐"
+                    page.insert_text(fitz.Point(x, y + 14), symbol, fontsize=14)
+                elif elem.get("type") == "date":
+                    text = elem.get("content", datetime.now().strftime("%d/%m/%Y"))
+                    page.insert_text(fitz.Point(x, y + 12), text, fontsize=12)
+                elif elem.get("type") == "image" and elem.get("imageData"):
+                    try:
+                        img_data = elem["imageData"]
+                        if "base64," in img_data:
+                            img_data = img_data.split("base64,")[1]
+                        img_bytes = base64.b64decode(img_data)
+                        w = elem.get("width", 100) * scale
+                        h = elem.get("height", 100) * scale
+                        rect = fitz.Rect(x, y, x + w, y + h)
+                        page.insert_image(rect, stream=img_bytes)
+                    except Exception as e:
+                        logging.error(f"Image overlay error: {e}")
+            
+            pdf_doc.save(output_path)
+            pdf_doc.close()
+        else:
+            from fpdf import FPDF
+            pdf = FPDF()
+            
+            for page_info in doc.get("pages", []):
+                pdf.add_page()
+                img_url = page_info.get("image_url", "")
+                if img_url:
+                    img_path = os.path.join(UPLOAD_DIR, img_url.split("/")[-1])
+                    if os.path.exists(img_path):
+                        pdf.image(img_path, 0, 0, 210)
+                
+                page_num = page_info.get("page_number", 1)
+                for elem in elements:
+                    if elem.get("page", 1) != page_num:
+                        continue
+                    s = 210 / page_info.get("width", 800)
+                    ex = elem.get("x", 0) * s
+                    ey = elem.get("y", 0) * s
+                    
+                    if elem.get("type") in ["text", "date"]:
+                        pdf.set_xy(ex, ey)
+                        pdf.set_font("Helvetica", size=int(elem.get("fontSize", 12) * s))
+                        pdf.cell(0, 5, elem.get("content", ""))
+            
+            pdf.output(output_path)
+        
+        return {
+            "message": "PDF généré avec succès",
+            "pdf_url": f"/api/uploads/{output_filename}",
+            "filename": output_filename
+        }
+    except Exception as e:
+        logging.error(f"PDF generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur de génération: {str(e)}")
+
 # ========== DOCUMENTS ==========
 @documents_module_router.get("")
 async def list_all_documents(
@@ -4940,268 +5189,6 @@ async def init_system_forms(current_user: dict = Depends(require_roles(["admin"]
     
     await db.document_forms.insert_many(system_forms)
     return {"message": "Formes système créées avec succès", "count": len(system_forms)}
-
-# ========== DOCUMENT FILE UPLOAD (PDF/DOCX/Image) ==========
-@documents_module_router.post("/upload-file")
-async def upload_document_file(
-    file: UploadFile = File(...),
-    current_user: dict = Depends(get_current_user)
-):
-    """Upload a PDF, DOCX, or image file for editing with overlay"""
-    allowed_types = {
-        "application/pdf": "pdf",
-        "image/jpeg": "image", "image/png": "image", "image/gif": "image", "image/webp": "image",
-        "application/msword": "docx",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx"
-    }
-    
-    if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Types acceptés: PDF, images (JPG, PNG, GIF, WebP), DOC/DOCX")
-    
-    file_type = allowed_types[file.content_type]
-    content = await file.read()
-    file_id = str(uuid.uuid4())
-    ext = os.path.splitext(file.filename)[1] or ".bin"
-    filename = f"doc_{file_id}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-    
-    with open(filepath, 'wb') as f:
-        f.write(content)
-    
-    # Convert PDF pages to images for overlay editing
-    pages = []
-    if file_type == "pdf":
-        try:
-            pdf_doc = fitz.open(stream=content, filetype="pdf")
-            for i, page in enumerate(pdf_doc):
-                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x zoom for quality
-                img_filename = f"doc_{file_id}_page_{i}.png"
-                img_path = os.path.join(UPLOAD_DIR, img_filename)
-                pix.save(img_path)
-                pages.append({
-                    "page_number": i + 1,
-                    "image_url": f"/api/uploads/{img_filename}",
-                    "width": pix.width,
-                    "height": pix.height
-                })
-            pdf_doc.close()
-        except Exception as e:
-            logging.error(f"PDF conversion error: {e}")
-            pages = [{"page_number": 1, "image_url": f"/api/uploads/{filename}", "width": 800, "height": 1100}]
-    elif file_type == "image":
-        from PIL import Image as PILImage
-        img = PILImage.open(io.BytesIO(content))
-        w, h = img.size
-        pages = [{"page_number": 1, "image_url": f"/api/uploads/{filename}", "width": w, "height": h}]
-    elif file_type == "docx":
-        # Convert DOCX to HTML, then we'll render it in frontend
-        try:
-            result = mammoth.convert_to_html(io.BytesIO(content))
-            html_content = result.value
-        except Exception:
-            html_content = "<p>Impossible de convertir ce document</p>"
-        pages = [{"page_number": 1, "html_content": html_content, "width": 800, "height": 1100}]
-    
-    # Save document record
-    doc_record = {
-        "id": file_id,
-        "name": file.filename,
-        "filename": filename,
-        "file_url": f"/api/uploads/{filename}",
-        "file_type": file_type,
-        "content_type": file.content_type,
-        "size": len(content),
-        "pages": pages,
-        "page_count": len(pages),
-        "overlay_elements": [],  # Will be filled by editor
-        "author_id": current_user["id"],
-        "author_name": f"{current_user['first_name']} {current_user['last_name']}",
-        "status": "draft",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-        "history": []
-    }
-    
-    await db.editor_documents.insert_one(doc_record)
-    doc_record.pop("_id", None)
-    return {"message": "Document uploadé", "document": doc_record}
-
-@documents_module_router.get("/editor-docs")
-async def list_editor_documents(current_user: dict = Depends(get_current_user)):
-    """List all uploaded documents for the editor"""
-    query = {}
-    if current_user["role"] not in ["super_admin", "admin"]:
-        query["author_id"] = current_user["id"]
-    docs = await db.editor_documents.find(query, {"_id": 0}).sort("updated_at", -1).to_list(100)
-    return {"documents": docs}
-
-@documents_module_router.get("/editor-docs/{doc_id}")
-async def get_editor_document(doc_id: str, current_user: dict = Depends(get_current_user)):
-    """Get a specific editor document with overlay data"""
-    doc = await db.editor_documents.find_one({"id": doc_id}, {"_id": 0})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document non trouvé")
-    return doc
-
-@documents_module_router.put("/editor-docs/{doc_id}/overlay")
-async def save_overlay(doc_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    """Save overlay elements for a document"""
-    doc = await db.editor_documents.find_one({"id": doc_id})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document non trouvé")
-    
-    # Save to history before updating
-    history_entry = {
-        "id": str(uuid.uuid4()),
-        "overlay_elements": doc.get("overlay_elements", []),
-        "saved_by": current_user["id"],
-        "saved_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    await db.editor_documents.update_one(
-        {"id": doc_id},
-        {
-            "$set": {
-                "overlay_elements": data.get("elements", []),
-                "updated_at": datetime.now(timezone.utc).isoformat()
-            },
-            "$push": {"history": history_entry}
-        }
-    )
-    return {"message": "Overlay sauvegardé"}
-
-@documents_module_router.delete("/editor-docs/{doc_id}")
-async def delete_editor_document(doc_id: str, current_user: dict = Depends(get_current_user)):
-    """Delete an editor document"""
-    doc = await db.editor_documents.find_one({"id": doc_id})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document non trouvé")
-    
-    # Delete associated files
-    try:
-        filepath = os.path.join(UPLOAD_DIR, doc.get("filename", ""))
-        if os.path.exists(filepath):
-            os.remove(filepath)
-        for page in doc.get("pages", []):
-            img_url = page.get("image_url", "")
-            if img_url:
-                img_path = os.path.join(UPLOAD_DIR, img_url.split("/")[-1])
-                if os.path.exists(img_path):
-                    os.remove(img_path)
-    except Exception:
-        pass
-    
-    await db.editor_documents.delete_one({"id": doc_id})
-    return {"message": "Document supprimé"}
-
-@documents_module_router.get("/editor-docs/{doc_id}/history")
-async def get_editor_history(doc_id: str, current_user: dict = Depends(get_current_user)):
-    """Get version history for a document"""
-    doc = await db.editor_documents.find_one({"id": doc_id}, {"_id": 0, "history": 1, "id": 1, "name": 1})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document non trouvé")
-    return {"history": doc.get("history", []), "document_name": doc.get("name")}
-
-@documents_module_router.post("/editor-docs/{doc_id}/generate-pdf")
-async def generate_pdf_with_overlay(doc_id: str, data: dict, current_user: dict = Depends(get_current_user)):
-    """Generate a final PDF with overlay elements applied on the original document"""
-    doc = await db.editor_documents.find_one({"id": doc_id}, {"_id": 0})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Document non trouvé")
-    
-    elements = data.get("elements", doc.get("overlay_elements", []))
-    
-    try:
-        original_path = os.path.join(UPLOAD_DIR, doc.get("filename", ""))
-        output_id = str(uuid.uuid4())
-        output_filename = f"generated_{output_id}.pdf"
-        output_path = os.path.join(UPLOAD_DIR, output_filename)
-        
-        if doc.get("file_type") == "pdf" and os.path.exists(original_path):
-            # Open original PDF and overlay elements
-            pdf_doc = fitz.open(original_path)
-            
-            for elem in elements:
-                page_idx = elem.get("page", 1) - 1
-                if page_idx < 0 or page_idx >= len(pdf_doc):
-                    continue
-                page = pdf_doc[page_idx]
-                
-                # Scale factor (page images are 2x zoom)
-                scale = 0.5
-                x = elem.get("x", 0) * scale
-                y = elem.get("y", 0) * scale
-                
-                if elem.get("type") == "text":
-                    text = elem.get("content", "")
-                    font_size = elem.get("fontSize", 14) * scale
-                    color_hex = elem.get("color", "#000000").lstrip("#")
-                    r, g, b = tuple(int(color_hex[i:i+2], 16) / 255 for i in (0, 2, 4))
-                    
-                    page.insert_text(
-                        fitz.Point(x, y + font_size),
-                        text,
-                        fontsize=font_size,
-                        color=(r, g, b)
-                    )
-                elif elem.get("type") == "checkbox":
-                    checked = elem.get("checked", False)
-                    symbol = "☑" if checked else "☐"
-                    page.insert_text(fitz.Point(x, y + 14), symbol, fontsize=14)
-                elif elem.get("type") == "date":
-                    text = elem.get("content", datetime.now().strftime("%d/%m/%Y"))
-                    page.insert_text(fitz.Point(x, y + 12), text, fontsize=12)
-                elif elem.get("type") == "image" and elem.get("imageData"):
-                    try:
-                        img_data = elem["imageData"]
-                        if "base64," in img_data:
-                            img_data = img_data.split("base64,")[1]
-                        img_bytes = base64.b64decode(img_data)
-                        w = elem.get("width", 100) * scale
-                        h = elem.get("height", 100) * scale
-                        rect = fitz.Rect(x, y, x + w, y + h)
-                        page.insert_image(rect, stream=img_bytes)
-                    except Exception as e:
-                        logging.error(f"Image overlay error: {e}")
-            
-            pdf_doc.save(output_path)
-            pdf_doc.close()
-        else:
-            # For non-PDF originals, create a new PDF with elements
-            from fpdf import FPDF
-            pdf = FPDF()
-            
-            for page_info in doc.get("pages", []):
-                pdf.add_page()
-                img_url = page_info.get("image_url", "")
-                if img_url:
-                    img_path = os.path.join(UPLOAD_DIR, img_url.split("/")[-1])
-                    if os.path.exists(img_path):
-                        pdf.image(img_path, 0, 0, 210)  # A4 width
-                
-                page_num = page_info.get("page_number", 1)
-                for elem in elements:
-                    if elem.get("page", 1) != page_num:
-                        continue
-                    scale = 210 / page_info.get("width", 800)
-                    x = elem.get("x", 0) * scale
-                    y = elem.get("y", 0) * scale
-                    
-                    if elem.get("type") in ["text", "date"]:
-                        pdf.set_xy(x, y)
-                        pdf.set_font("Helvetica", size=int(elem.get("fontSize", 12) * scale))
-                        pdf.cell(0, 5, elem.get("content", ""))
-            
-            pdf.output(output_path)
-        
-        return {
-            "message": "PDF généré avec succès",
-            "pdf_url": f"/api/uploads/{output_filename}",
-            "filename": output_filename
-        }
-    except Exception as e:
-        logging.error(f"PDF generation error: {e}")
-        raise HTTPException(status_code=500, detail=f"Erreur de génération: {str(e)}")
 
 api_router.include_router(documents_module_router)
 
