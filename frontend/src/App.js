@@ -22,6 +22,7 @@ import SitesManagement from './pages/SitesManagement';
 import DepartmentsManagement from './pages/DepartmentsManagement';
 import DocumentsModule from './pages/DocumentsModuleV2';
 import DocumentsRHHistory from './pages/DocumentsRHHistory';
+import DocumentEditor from './pages/DocumentEditor';
 import NotificationsModule from './pages/NotificationsModule';
 
 // Protected Route Component
@@ -88,6 +89,8 @@ function AppRoutes() {
       <Route path="/behavior" element={<ProtectedRoute><Behavior /></ProtectedRoute>} />
       <Route path="/permissions" element={<ProtectedRoute><PermissionsManagement /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><DocumentsModule /></ProtectedRoute>} />
+      <Route path="/document-editor" element={<ProtectedRoute><DocumentEditor /></ProtectedRoute>} />
+      <Route path="/document-editor/:docId" element={<ProtectedRoute><DocumentEditor /></ProtectedRoute>} />
       <Route path="/documents-rh" element={<ProtectedRoute allowedRoles={['super_admin', 'admin']}><DocumentsRHHistory /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><NotificationsModule /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

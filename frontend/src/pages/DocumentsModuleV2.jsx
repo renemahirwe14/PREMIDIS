@@ -277,6 +277,18 @@ const DocumentsModuleV2 = () => {
                 </div>
               </div>
             </CardHeader>
+            {/* Quick access to Document Editor */}
+            <div className="px-6 pb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full border-dashed border-primary/50 text-primary hover:bg-primary/5"
+                onClick={() => navigate('/document-editor')}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {t('docs.openEditor') || 'Ouvrir l\'éditeur visuel (PDF/Image)'}
+              </Button>
+            </div>
             <CardContent>
               {forms.length === 0 ? (
                 <div className="text-center py-12">
