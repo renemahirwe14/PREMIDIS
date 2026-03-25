@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import DashboardLayout from '../components/layout/DashboardLayout';
 import axios from '../config/api';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -220,21 +221,13 @@ const DocumentsModuleV2 = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <DashboardLayout>
+    <div className="min-h-screen">
       {/* LIBRARY VIEW */}
       {view === 'library' && (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/dashboard')}
-                className="mb-3"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {t('docs.backToDashboard')}
-              </Button>
               <h1 className="text-4xl font-bold flex items-center gap-3">
                 <FileText className="h-10 w-10" />
                 📄 {t('docs.title')}
@@ -371,8 +364,8 @@ const DocumentsModuleV2 = () => {
                       <Card key={doc.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-16 h-20 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-                              <FileText className="h-8 w-8 text-gray-600" />
+                            <div className="w-16 h-20 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                              <FileText className="h-8 w-8 text-muted-foreground" />
                             </div>
                             
                             <div className="flex-1">
@@ -433,9 +426,9 @@ const DocumentsModuleV2 = () => {
 
       {/* EDITOR VIEW - iFrame with Perfect Style Isolation */}
       {view === 'editor' && (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen">
           {/* Top Bar */}
-          <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
+          <div className="sticky top-0 z-50 bg-card border-b shadow-sm">
             <div className="flex items-center justify-between p-4">
               <Button
                 variant="ghost"
@@ -476,7 +469,7 @@ const DocumentsModuleV2 = () => {
             </div>
 
             {/* Toolbar */}
-            <div className="flex items-center gap-1 px-4 py-2 border-t bg-gray-50 flex-wrap">
+            <div className="flex items-center gap-1 px-4 py-2 border-t bg-muted/50 flex-wrap">
               <Button
                 variant="ghost"
                 size="sm"
@@ -647,8 +640,8 @@ const DocumentsModuleV2 = () => {
 
       {/* PREVIEW VIEW */}
       {view === 'preview' && currentDocument && (
-        <div className="min-h-screen bg-gray-50">
-          <div className="sticky top-0 z-50 bg-white border-b shadow-sm">
+        <div className="min-h-screen">
+          <div className="sticky top-0 z-50 bg-card border-b shadow-sm">
             <div className="flex items-center justify-between p-4">
               <Button
                 variant="ghost"
@@ -748,6 +741,7 @@ const DocumentsModuleV2 = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </DashboardLayout>
   );
 };
 
